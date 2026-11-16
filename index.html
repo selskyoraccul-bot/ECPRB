@@ -213,8 +213,22 @@ $("r1").onclick=function(){activate("main")};
 $("r2").onclick=function(){openTab("Журнал назначений")};
 $("r3").onclick=function(){openTab("Отчёты")};
 
+var SUPA_URL='https://bcmnktypnnnkivqoabuv.supabase.co',SUPA_KEY='sb_publishable_T1id5uMj1NpTE-ZyHjgLSg_xEW_jjpT';
+var SYNCK=['mis_u','mis_o','mis_p2','mis_aud','mis_v','mis_ap','mis_w','mis_mkb','mis_me','mis_req','mis_nt','mis_ban'],pushT=null,pushPend={};
+function supaCfg(){return SUPA_URL&&SUPA_KEY}
 function ls(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(x){return d}}
-function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(x){}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(x){}
+ if(SYNCK.indexOf(k)>=0)queuePush(k)}
+function queuePush(k){if(!supaCfg())return;pushPend[k]=1;if(pushT)clearTimeout(pushT);pushT=setTimeout(cloudPush,800)}
+function cloudPush(){if(!supaCfg())return;
+ var body=Object.keys(pushPend).map(function(k){return{id:k,data:ls(k,null)}});pushPend={};
+ if(!body.length)return;
+ fetch(SUPA_URL+'/rest/v1/state?on_conflict=id',{method:'POST',headers:{apikey:SUPA_KEY,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},body:JSON.stringify(body)}).catch(function(){})}
+function cloudPull(cb){if(!supaCfg()){if(cb)cb();return}
+ fetch(SUPA_URL+'/rest/v1/state?select=id,data',{headers:{apikey:SUPA_KEY}}).then(function(r){return r.json()}).then(function(rows){
+  if(Array.isArray(rows))rows.forEach(function(row){if(SYNCK.indexOf(row.id)>=0&&row.data!==null){try{localStorage.setItem(row.id,JSON.stringify(row.data))}catch(x){}}});
+  reloadState();if(cb)cb()}).catch(function(){if(cb)cb()})}
+function reloadState(){U=ls('mis_u',U);O=ls('mis_o',O);P=ls('mis_p2',P);AUD=ls('mis_aud',AUD);JV=ls('mis_v',JV);AP=ls('mis_ap',AP);WD=ls('mis_w',WD);MKB=ls('mis_mkb',null)||MKB;ME=ls('mis_me',ME);REQ=ls('mis_req',REQ);NT=ls('mis_nt',NT);BAN=ls('mis_ban',BAN)}
 var U=ls('mis_u',{}),O=ls('mis_o',[]),S=ls('mis_s',null),org=null,code=null,pend=null,scr=$('scr');
 var TG=/^[A-Za-z0-9_]{5,32}$/;
 var DEF_BOT='9174150987:AAEQ_3yvJp3Hq6vQAEdDuSeO-kWWVyWa4Co';
@@ -313,9 +327,9 @@ $('alt').addEventListener('change',function(ev){var g=ev.target.dataset.og;if(!g
  if(g==='p'){if(v)org.st[+ev.target.dataset.i].p=v}else if(g==='n'){if(v)org.n=v}else org[g]=v;
  saveOrg();setTl();$('alt').innerHTML=setView()});
 scr.onclick=function(ev){var b=ev.target.closest('[data-a]');if(!b)return;var a=b.dataset.a;
- if(a==='mis')(S?orgs():login());else if(a==='req')reqView();else if(a==='nt')ntView();else if(a==='rqok')rqAct(b.dataset.id,1);else if(a==='rqno')rqAct(b.dataset.id,0);else if(a==='home')home();else if(a==='me')(ME&&meFind().length?meInfo():meLogin());else if(a==='melogin')meLogin();else if(a==='mego')meGo();else if(a==='meap')meApt();else if(a==='meout')meOut();else if(a==='mespec'){meSpec=+b.dataset.i;meApt()}else if(a==='mechg'){meSpec=null;meApt()}else if(a==='meslot')meSlot(b.dataset.t);else if(a==='mecan')meCan(b.dataset.id);else if(a==='login')login();else if(a==='reg')reg();else if(a==='lcode')loginCode();else if(a==='code')getCode();else if(a==='ok')okCode();
- else if(a==='mgmt')mgmtView();else if(a==='ban')banAcc();else if(a==='unban')unbanAcc(b.dataset.t);
- else if(a==='enter')enter(+b.dataset.i);else if(a==='newo')newOrg();else if(a==='mk')mkOrg();else if(a==='orgs')orgs();
+ if(a==='mis')(S?cloudPull(orgs):login());else if(a==='req')cloudPull(reqView);else if(a==='nt')cloudPull(ntView);else if(a==='rqok')rqAct(b.dataset.id,1);else if(a==='rqno')rqAct(b.dataset.id,0);else if(a==='home')home();else if(a==='me')(ME&&meFind().length?meInfo():meLogin());else if(a==='melogin')meLogin();else if(a==='mego')meGo();else if(a==='meap')meApt();else if(a==='meout')meOut();else if(a==='mespec'){meSpec=+b.dataset.i;meApt()}else if(a==='mechg'){meSpec=null;meApt()}else if(a==='meslot')meSlot(b.dataset.t);else if(a==='mecan')meCan(b.dataset.id);else if(a==='login')login();else if(a==='reg')reg();else if(a==='lcode')loginCode();else if(a==='code')getCode();else if(a==='ok')okCode();
+ else if(a==='mgmt')cloudPull(mgmtView);else if(a==='ban')banAcc();else if(a==='unban')unbanAcc(b.dataset.t);
+ else if(a==='enter')cloudPull(function(){enter(+b.dataset.i)});else if(a==='newo')newOrg();else if(a==='mk')mkOrg();else if(a==='orgs')orgs();
  else if(a==='out'){S=null;sv('mis_s',null);home()}};
 $('bk').onclick=function(ev){ev.preventDefault();home()};
 
@@ -551,6 +565,8 @@ G90.8|Другие расстройства вегетативной [автон
 H10.9|Конъюнктивит неуточнённый
 H25.9|Старческая катаракта неуточнённая
 H40.9|Глаукома неуточнённая
+
+строки 1-567
 H52.1|Миопия
 H66.9|Средний отит неуточнённый
 H81.1|Доброкачественное пароксизмальное головокружение
@@ -1076,6 +1092,7 @@ function ntView(){var L=NT.filter(function(n){return n.to===S}),fresh={};
  R('<div class="card w"><h2>Уведомления</h2>'+(L.length?L.map(function(n){return'<div class="ri">'+(fresh[n.id]?'<b>':'')+e(n.text)+(fresh[n.id]?'</b>':'')+'<span class="sb">'+n.date+(fresh[n.id]?' · новое':'')+'</span></div>'}).join(''):'<p>Уведомлений нет.</p>')+'</div>','nt')}
 scr.addEventListener('keydown',function(ev){if(ev.key!=='Enter'||ev.target.tagName!=='INPUT')return;var m={lt:'lcode',rt:'code',bk2:'ban',mt:'mego',rn:'mk',rc2:'mk'}[ev.target.id];if(m)scr.onclick({target:{closest:function(){return{dataset:{a:m}}}}})});
 $('addp').onclick=addPDlg;
-home();
-draw();
+setInterval(function(){if(supaCfg())cloudPull()},15000);
+addEventListener('beforeunload',cloudPush);
+cloudPull(function(){home();draw()});
 </script></body></html>
