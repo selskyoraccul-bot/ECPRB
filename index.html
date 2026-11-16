@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>АРМ врача стационара</title>
+<style>
+:root{color-scheme:light;--bg:#fff;--pn:#f5f7f9;--tx:#2b3640;--mu:#7b8894;--ln:#e1e6ea;--gr:#eceff1;--d:#1a73c9;--m:#2196f3;--sel:#e3f0fc;--ch:#f4f6f8;--wn:#fbe6a6;--wt:#6d5300;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--tx);font:13px/1.35 Roboto,"Segoe UI",Arial,sans-serif;display:flex;flex-direction:column}
+.top{background:var(--d);color:#fff;font-size:12px;padding:8px 12px;display:flex;justify-content:space-between;gap:12px}
+.top span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb{background:var(--m);height:34px;display:flex;align-items:flex-end;padding-left:8px}
+.tb{overflow-x:auto}.tb b{color:#fff;font-weight:500;padding:0 6px 8px 12px;border-bottom:3px solid transparent;font-size:12px;cursor:pointer;opacity:.8;white-space:nowrap;display:flex;gap:6px}.tb b.on{border-bottom-color:#fff;opacity:1}.tb b[data-t=main]{padding-right:12px}.tb i{font-style:normal;padding:0 4px}.tb i:hover{background:rgba(255,255,255,.25)}
+#alt{display:none}.app.alt .flt,.app.alt #mid,.app.alt .ev{display:none}.app.alt #alt{display:flex;overflow:auto}#alt h3{margin:0;padding:14px;font-weight:500;font-size:15px}.tw{overflow:auto;padding:0 14px 14px}.tw table{border-collapse:collapse;width:100%;min-width:520px}.tw th{text-align:left;color:var(--mu);font-weight:400;padding:8px;border-bottom:1px solid var(--ln)}.tw td{padding:9px 8px;border-bottom:1px solid var(--ln)}
+.app{flex:1;display:flex;min-height:0;position:relative}
+.rail{width:36px;border-right:1px solid var(--ln);background:var(--pn);display:flex;flex-direction:column;align-items:center;padding-top:8px;gap:2px;flex-shrink:0}
+.rail button{width:30px;height:30px;border:0;background:none;color:var(--mu);cursor:pointer;font-size:15px;border-radius:3px}
+.rail button:hover,.rail button.on{background:var(--sel);color:var(--d)}
+.menu{display:none;position:absolute;left:0;top:0;bottom:0;width:206px;background:var(--bg);border-right:1px solid var(--ln);z-index:5;padding-top:6px;box-shadow:2px 0 6px rgba(0,0,0,.12)}
+.menu.on{display:block}
+.menu div.i{padding:8px 12px 8px 14px;cursor:pointer;display:flex;justify-content:space-between}
+.menu div.i:hover{background:var(--sel)}
+.sub{display:none;position:absolute;left:206px;top:84px;width:290px;background:var(--bg);border:1px solid var(--ln);box-shadow:2px 2px 8px rgba(0,0,0,.15);padding:4px 0}
+.sub.on{display:block}
+.sub div{padding:7px 14px;cursor:pointer}.sub div:hover{background:var(--sel)}
+.flt{width:200px;border-right:1px solid var(--ln);background:var(--pn);padding:12px;display:flex;flex-direction:column;gap:9px;flex-shrink:0;overflow-y:auto}
+.flt h4,.hd h4{margin:0;font-weight:500;font-size:12px;letter-spacing:.4px;color:var(--mu)}
+.flt label{font-size:12px;color:var(--mu);display:block;margin-bottom:3px}
+.flt input[type=text],.flt input[type=date],.flt select{width:100%;padding:5px 7px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);border-radius:6px;font:inherit}
+.dt{display:flex;gap:4px;align-items:center}.dt button{border:0;background:none;cursor:pointer;color:var(--mu);font-size:16px}
+.row2{display:flex;gap:6px}.seg{display:flex}.seg button{flex:1;padding:5px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);cursor:pointer}.seg button.on{background:var(--sel);border-color:var(--m);color:var(--d)}
+.fb{margin-top:auto;display:flex;justify-content:space-between;padding-top:8px}
+.fb button{border:0;background:none;color:var(--d);font-weight:500;cursor:pointer;letter-spacing:.4px}.fb button+button{color:var(--mu)}
+.mid{flex:1;min-width:0;display:flex;flex-direction:column}
+.hd{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--ln)}
+.hd select{padding:4px 6px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);border-radius:6px}
+.lw{flex:1;overflow:auto}
+.cols,.pr{display:grid;grid-template-columns:78px minmax(190px,1.3fr) 150px 100px minmax(200px,2fr) 120px 84px;gap:8px;align-items:start;min-width:950px;padding:8px 14px}
+.cols{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--ln);color:var(--mu);z-index:1;align-items:center}
+.cols input{width:100%;padding:4px 6px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);border-radius:2px;font:inherit}
+.g{background:var(--gr);font-weight:500;padding:7px 14px;min-width:950px;cursor:pointer}.g small{color:var(--mu);font-weight:400;margin-left:6px}
+.pr{border-bottom:1px solid var(--ln);cursor:pointer;padding:10px 14px}.pr:hover{background:var(--ch)}.pr.on{background:var(--sel)}.pr:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--m);outline-offset:-2px}
+.nm{display:flex;gap:7px}.dot{width:10px;height:10px;border-radius:50%;margin-top:4px;flex-shrink:0}.f{background:#e55353}.m{background:#4c9be8}
+.nm small,.sm{color:var(--mu);display:block}
+.chips span{display:inline-block;background:var(--ch);color:var(--mu);font-size:9px;text-transform:uppercase;padding:1px 5px;margin:0 3px 3px 0;border:1px solid var(--ln)}
+.chips span.w{background:var(--wn);color:var(--wt);border-color:transparent}
+.ev{width:250px;border-left:1px solid var(--ln);background:var(--pn);flex-shrink:0;overflow-y:auto}
+.ev .hd{background:var(--pn)}.ev p{margin:0;padding:10px 14px;border-bottom:1px solid var(--ln)}.ev p small{display:block;color:var(--mu)}
+.emp{color:var(--mu);padding:14px}
+@media(max-width:900px){.ev{display:none}}
+@media(max-width:700px){.flt{display:none}.top{font-size:11px}}
+#scr{flex:1;overflow:auto;display:flex;flex-direction:column;align-items:center;background:var(--pn)}
+.pg{width:100%;display:flex;flex-direction:column;align-items:center;padding:28px 14px}
+.hb{width:100%;background:var(--d);color:#fff;padding:9px 14px;display:flex;align-items:center;gap:10px}
+.hb b{font-weight:500;font-size:15px;letter-spacing:.5px}
+.lgi{height:30px;display:block}
+.lg{width:30px;height:30px;border:1px dashed rgba(255,255,255,.55);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8px;opacity:.8;flex-shrink:0}
+.tb2{width:100%;background:var(--m);height:34px;display:flex;align-items:flex-end;padding-left:8px;overflow-x:auto}
+.tb2 b{color:#fff;font-weight:500;padding:0 14px 8px;border-bottom:3px solid transparent;font-size:12px;cursor:pointer;opacity:.8;white-space:nowrap;letter-spacing:.3px}
+.tb2 b.on{border-bottom-color:#fff;opacity:1}
+body.in #scr{display:none}
+body:not(.in) .top,body:not(.in) .tb,body:not(.in) .app{display:none}
+.card{width:100%;max-width:440px;background:var(--bg);border:1px solid var(--ln);border-radius:6px;padding:20px}
+.card h2{margin:0 0 4px;font-size:18px;font-weight:500}.card p{color:var(--mu);margin:0 0 12px}
+.card label{display:block;font-size:12px;color:var(--mu);margin:10px 0 3px}
+.card input,.card select,.sf input{width:100%;padding:8px 9px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);border-radius:6px;font:inherit}
+.bt{margin-top:12px;width:100%;padding:10px;border:1px solid transparent;border-radius:3px;background:var(--d);color:#fff;font:inherit;cursor:pointer}.bt.g2{background:none;color:var(--d);border:1px solid var(--d)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;width:100%;max-width:640px}
+.tile{background:var(--bg);border:1px solid var(--ln);border-radius:6px;padding:16px;text-align:left;font:inherit;color:var(--tx);cursor:pointer;width:100%;margin-bottom:0}
+.tile b{display:block;font-size:15px;margin-bottom:4px}.tile.off{opacity:.5;cursor:not-allowed}.tile:not(.off):hover{border-color:var(--m)}
+.card .tile{margin-bottom:8px}.sb{color:var(--mu);font-size:12px}
+.tg{background:var(--sel);border-radius:6px;padding:10px;margin:12px 0 0;font-size:12px}
+.err{color:#d33;font-size:12px;margin-top:8px}.sf{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.sf input{flex:1;min-width:150px;width:auto}
+.dl{padding:4px 10px;margin:0;width:auto}
+.pc{display:flex;flex-direction:column;flex:1;min-height:0;width:100%}
+.ph{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--ln);flex-wrap:wrap}
+.ph b{font-size:15px;font-weight:500}.ph select{margin-left:auto;padding:5px 8px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);border-radius:6px;font:inherit}
+.pin{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:6px 18px;padding:10px 14px;border-bottom:1px solid var(--ln);background:var(--bg)}
+.pin small{color:var(--mu);display:block;font-size:11px}
+.pb{flex:1;display:flex;min-height:0}
+.tlp{width:340px;max-width:45%;border-right:1px solid var(--ln);display:flex;flex-direction:column;background:var(--pn)}
+.tlh{display:flex;gap:6px;padding:8px;border-bottom:1px solid var(--ln)}
+#tl2{flex:1;overflow:auto}
+.dxc{display:flex;gap:8px;padding:10px 12px;border-bottom:1px dashed var(--ln);align-items:flex-start;background:var(--bg)}
+.dxd{width:52px;color:var(--mu);font-size:11px;flex-shrink:0;padding-top:2px}
+.dxo{width:14px;height:14px;border-radius:50%;border:3px solid var(--m);background:var(--bg);flex-shrink:0;margin-top:2px}
+.dxt{flex:1;min-width:0}
+.rm{border:0;background:none;color:var(--mu);cursor:pointer;font:inherit;padding:2px 6px}.rm:hover{color:#d33}
+.rp{flex:1;display:flex;flex-direction:column;min-width:0}
+.rh{padding:10px 14px;background:var(--gr);font-size:15px}
+.rb{flex:1;overflow:auto;padding:14px}
+.pbar{display:flex;background:var(--m);overflow-x:auto;flex-shrink:0}
+.pbar b{color:#fff;font-weight:500;font-size:12px;padding:13px 16px;cursor:pointer;opacity:.85;white-space:nowrap;border-bottom:3px solid transparent}
+.pbar b.on{opacity:1;border-bottom-color:#fff}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 20px}
+.fg label{display:block;font-size:12px;color:var(--mu)}
+.fg input,.fg select,.fg textarea,.tlh input,#mo input,#mo select,.sf2 input{width:100%;margin-top:3px;padding:7px 9px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);border-radius:6px;font:inherit}
+.tlh input{margin-top:0}.fg textarea{min-height:140px;resize:vertical}
+.bt2{padding:7px 12px;border:1px solid transparent;border-radius:3px;background:var(--d);color:#fff;cursor:pointer;font:inherit;white-space:nowrap}
+.bt2.g2{background:none;color:var(--d);border:1px solid var(--d)}
+.hd input{width:220px;padding:5px 8px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);border-radius:2px;font:inherit}
+#mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:20;align-items:center;justify-content:center;padding:14px}#mo.on{display:flex}
+.mb{background:var(--bg);border-radius:6px;padding:18px;width:100%;max-width:400px}.mb h3{margin:0 0 6px;font-weight:500;font-size:16px}.mb p{margin:0;color:var(--mu)}
+.mb label{display:block;font-size:12px;color:var(--mu);margin:10px 0 0}
+.mf{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.sf2{display:flex;gap:8px;margin-bottom:6px}.sf2 input{margin-top:0}
+.ord{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--ln)}
+@media(max-width:700px){.pb{flex-direction:column;overflow:auto}.tlp{width:auto;max-width:none;max-height:260px;border-right:0;border-bottom:1px solid var(--ln);flex-shrink:0}.hd input{width:150px}}
+.lgt{height:26px;display:block;flex-shrink:0}.ml{padding:10px 14px 8px;border-bottom:1px solid var(--ln);margin-bottom:4px}.ml img{height:44px;display:block}
+.oi{flex:1;min-width:0;padding:6px 8px;border:1px solid transparent;background:none;color:var(--tx);font:inherit;border-radius:3px}.oi:hover,.oi:focus{border-color:var(--ln);background:var(--bg)}
+.jv .tw table{min-width:480px}.jv input{width:100%;padding:6px 8px;border:1px solid transparent;background:none;color:var(--tx);font:inherit;border-radius:3px}.jv input:hover,.jv input:focus{border-color:var(--ln);background:var(--bg)}.jv td{padding:3px 4px}
+.rvc{display:flex;gap:12px;flex-wrap:wrap;margin:0 14px 10px;align-items:flex-end}.rvc label{font-size:12px;color:var(--mu)}.rvc input{display:block;margin-top:3px;padding:7px 9px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);border-radius:3px;font:inherit}
+.sl{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--ln)}.sl .tm{width:52px;color:var(--mu)}.sl.bk .tm{color:var(--tx);font-weight:500}.sl .fr{flex:1;color:var(--mu)}.tg2{font-size:11px;padding:1px 8px;border-radius:10px;border:1px solid currentColor;white-space:nowrap}
+.g{display:flex;align-items:center}.gw{margin-left:auto;display:flex}
+.mi{padding:6px 8px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--ln)}.mi:hover{background:var(--sel)}#ms{max-height:170px;overflow:auto;margin-top:6px;border:1px solid var(--ln);border-radius:3px}#ms:empty{display:none}
+.card.w{max-width:760px}.fg2{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 18px}.fg2 small{display:block}.ri{padding:7px 0;border-bottom:1px solid var(--ln)}.ri:last-child{border-bottom:0}.slg{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}.lk{border:0;background:none;color:var(--d);cursor:pointer;font:inherit;padding:0 4px;text-decoration:underline}.card input[type=date]{max-width:220px}
+</style></head><body>
+<div id="scr"></div><div id="mo" role="dialog" aria-modal="true"></div>
+<div class="top"><span style="display:flex;align-items:center;gap:10px;min-width:0"><img class="lgt" alt="РБ.МИС" src="data:image/png;base64,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"><span id="tl"></span></span><span><a href="#" id="bk" style="color:#fff;margin-right:12px">← Меню</a><span id="tu"></span></span></div>
+<div class="tb" id="tb"><b class="on" data-t="main">ЖУРНАЛ</b></div>
+<div class="app" id="app">
+ <div class="rail"><button id="mb" title="Меню" aria-label="Меню">☰</button><button id="r1" title="Журнал" aria-label="Журнал">▤</button><button id="r2" title="Журнал назначений" aria-label="Журнал назначений">✚</button><button id="r3" title="Отчёты" aria-label="Отчёты">▦</button><button id="r4" title="Запись" aria-label="Запись">◷</button></div>
+ <div class="menu" id="menu"><div class="ml"><img alt="ЕЦПРБ РБ.МИС" src="data:image/png;base64,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"></div>
+  <div class="i">Запись</div><div class="i" id="mall">Записи пациентов</div><div class="i" id="mset">Настройки организации</div><div class="i">Дежурства и смены</div>
+  <div class="i" id="jm">Журналы <span>›</span></div>
+  <div class="i" id="maud">Журнал изменений</div><div class="i">Журнал извещений <span>›</span></div><div class="i">Патоморфология <span>›</span></div><div class="i">Коечный фонд</div><div class="i">Регистры по заболеваниям <span>›</span></div><div class="i">Справочники <span>›</span></div><div class="i">Отчёты</div><div class="i">Шаблоны документов <span>›</span></div><div class="i">Свидетельства <span>›</span></div>
+  <div class="sub" id="sub"><div>Журнал направлений и выбывших</div><div>Журнал направлений на МСЭ</div><div>Журнал назначений</div><div>Журнал уведомлений</div><div>Журнал запросов</div><div>Журнал простоя коек</div><div>Журнал учёта рабочего времени</div><div>Журнал медикаментов</div><div>Журнал консилиумов</div></div>
+ </div>
+ <aside class="flt">
+  <h4>ФИЛЬТРЫ</h4>
+  <div class="dt"><button type="button" id="dp" aria-label="Предыдущий день">←</button><input type="date" id="dd" value="2026-11-13"><button type="button" id="dn" aria-label="Следующий день">→</button></div>
+  <label><input type="checkbox" id="my"> Мои пациенты</label>
+  <div><label>Палаты:</label><div class="seg" id="wd" style="flex-wrap:wrap"></div><button class="bt2 g2" id="addw" type="button" style="margin-top:6px;width:100%">+ Создать палату</button></div>
+  <div><label>Диагноз:</label><input type="text" id="dg" placeholder="Код или название"></div>
+  <div><label>Возраст пациента:</label><div class="row2"><input type="text" id="a1" placeholder="от" inputmode="numeric"><input type="text" id="a2" placeholder="до" inputmode="numeric"></div></div>
+  <div><label>Пол:</label><select id="sx"><option value="">Любой</option><option>Ж</option><option>М</option></select></div>
+  <div><label>Статус:</label><select id="st"><option value="">Любой</option><option>К выписке</option><option>В реанимации</option><option>Переведён</option><option>Лечится</option></select></div>
+  <div><label>Номер КВС:</label><input type="text" id="kv" inputmode="numeric"></div>
+  <div class="fb"><button type="button" id="go">НАЙТИ</button><button type="button" id="rs">СБРОСИТЬ</button></div>
+ </aside>
+ <section class="mid" id="mid">
+  <div id="shb" style="display:none;padding:8px 14px;background:var(--wn);color:var(--wt);font-size:12px">⚠ Смена закрыта — данные доступны только для просмотра. Владелец может открыть смену в «Настройках организации».</div>
+  <div class="hd"><h4>ПАЦИЕНТЫ</h4><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="fio" type="search" placeholder="Поиск пациента (ФИО, КВС)" aria-label="Поиск пациента"><button class="bt2" id="addp" type="button">+ Добавить</button> Группировать: <select id="gb"><option value="w">По палатам</option><option value="">Без группировки</option></select></div></div>
+  <div class="lw"><div class="cols"><span>КВС</span><span>ФИО</span><span>Признаки</span><span>Поступил</span><span>Диагноз</span><span>Статус</span><span></span></div><div id="list"></div></div>
+ </section>
+ <section class="mid" id="alt"></section>
+ <aside class="ev"><div class="hd"><h4>СОБЫТИЯ</h4></div><div id="evl" class="emp">Выберите пациента в списке.</div></aside>
+</div>
+<script>
+var P=[];
+var $=function(i){return document.getElementById(i)},cur=null,ws=[],coll={};
+function e(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML}
+function days(d){var p=d.split(".");return Math.max(0,Math.round((new Date(2026,10,13)-new Date(p[2],p[1]-1,p[0]))/864e5))}
+function ok(x){
+ var q=$("fio").value.toLowerCase(),dg=$("dg").value.toLowerCase(),a1=+$("a1").value||0,a2=+$("a2").value||999;
+ if(q&&x.n.toLowerCase().indexOf(q)<0&&x.k.indexOf(q)<0)return 0;
+ if(dg&&(x.c+" "+x.x).toLowerCase().indexOf(dg)<0)return 0;
+ if(x.a<a1||x.a>a2)return 0;
+ if($("sx").value&&x.s!==$("sx").value)return 0;
+ if($("st").value&&x.st!==$("st").value)return 0;
+ if($("kv").value&&x.k.indexOf($("kv").value)<0)return 0;
+ if($("my").checked&&!x.w)return 0;
+ if(ws.length&&ws.indexOf(x.g)<0)return 0;
+ return 1}
+function row(x){var i=P.indexOf(x);
+ return '<div class="pr'+(cur===i?' on':'')+'" tabindex="0" data-i="'+i+'"><span>'+x.k+'</span><span class="nm"><i class="dot '+(x.s==="Ж"?'f':'m')+'"></i><span>'+e(x.n)+'<small>'+x.b+' · '+x.a+' '+(x.a%10===1&&x.a!==11?'год':(x.a%10>1&&x.a%10<5&&(x.a<10||x.a>20)?'года':'лет'))+'</small></span></span><span class="chips">'+x.t.map(function(t){return'<span class="'+(/выписк|реанимац/.test(t)?'w':'')+'">'+e(t)+'</span>'}).join("")+'</span><span>'+x.d+'<span class="sm">'+days(x.d)+' дн.</span></span><span>'+(x.c?'<b>'+x.c+'</b> '+e(x.x):'')+'</span><span>'+x.st+'</span><span><button class="rm" type="button" data-d="'+i+'">Удалить</button></span></div>'}
+function draw(){
+ var L=P.filter(ok),h="";
+ if(!L.length&&!(noF()&&WD.length&&$("gb").value!=="")){$("list").innerHTML=(P.length?'<div class="emp">Пациенты не найдены. Измените фильтры или нажмите «Сбросить».</div>':'<div class="emp">Пациентов пока нет. Нажмите «+ Добавить», чтобы создать первого.</div>');return}
+ if($("gb").value===""){h=L.map(row).join("")}
+ else{var gs=[];L.forEach(function(x){if(gs.indexOf(x.g)<0)gs.push(x.g)});if(noF())WD.forEach(function(w){if(gs.indexOf(w.n)<0)gs.push(w.n)});
+  gs.sort(function(a,b){var o=["Переведены из других отделений","Без палаты"];return (o.indexOf(a)<0?9:o.indexOf(a))-(o.indexOf(b)<0?9:o.indexOf(b))||a.localeCompare(b)});
+  gs.forEach(function(g){var m=L.filter(function(x){return x.g===g});
+   var wi=WD.map(function(w){return w.n}).indexOf(g),wo=wi>=0?WD[wi]:null;
+   h+='<div class="g" data-g="'+e(g)+'">'+(coll[g]?'▸ ':'▾ ')+e(g)+' <small>'+m.length+(wo?' · свободно '+Math.max(0,wo.cap-P.filter(function(p){return p.g===g}).length)+' из '+wo.cap:'')+'</small>'+(wo?'<span class="gw"><button class="rm" type="button" data-wa="edit" data-i="'+wi+'" aria-label="Изменить палату">✎</button><button class="rm" type="button" data-wa="del" data-i="'+wi+'" aria-label="Удалить палату">×</button></span>':'')+'</div>';
+   if(!coll[g])h+=m.map(row).join("")})}
+ $("list").innerHTML=h}
+function show(i){cur=i;var x=P[i];
+ $("evl").className="";$("evl").innerHTML='<p><b>'+e(x.n)+'</b><small>КВС '+x.k+'</small></p><p>Поступление<small>'+x.d+', '+e(x.g)+'</small></p><p>Источник<small>'+(x.co?e(x.co)+(x.cb?' · @'+e(x.cb):''):'—')+'</small></p><p>Диагноз<small>'+(x.c?x.c+' '+e(x.x):'не указан')+'</small></p><p>Лист назначений<small>Обновлён сегодня, 08:40</small></p><p>Дневник наблюдения<small>Записей за сутки: 2</small></p>';draw()}
+$("list").onclick=function(ev){var wa=ev.target.closest("[data-wa]");if(wa){wardAct(wa.dataset.wa,+wa.dataset.i);return}var d=ev.target.closest("[data-d]");if(d){delP(+d.dataset.d);return}var r=ev.target.closest(".pr"),g=ev.target.closest(".g");if(r)openCard(+r.dataset.i);else if(g){coll[g.dataset.g]=!coll[g.dataset.g];draw()}};
+$("list").onkeydown=function(ev){if(ev.key==="Enter"&&!ev.target.closest("[data-d]")){var r=ev.target.closest(".pr");if(r)openCard(+r.dataset.i)}};
+["fio","dg","a1","a2","kv"].forEach(function(k){$(k).oninput=draw});
+["sx","st","my","gb"].forEach(function(k){$(k).onchange=draw});
+$("go").onclick=draw;
+$("rs").onclick=function(){["fio","dg","a1","a2","kv","sx","st"].forEach(function(k){$(k).value=""});$("my").checked=false;ws=[];document.querySelectorAll("#wd button").forEach(function(b){b.classList.remove("on")});draw()};
+$("wd").onclick=function(ev){var w=ev.target.dataset.w;if(!w)return;var i=ws.indexOf(w);i<0?ws.push(w):ws.splice(i,1);ev.target.classList.toggle("on");draw()};
+function step(n){var d=new Date($("dd").value);d.setDate(d.getDate()+n);$("dd").value=d.toISOString().slice(0,10)}
+$("dp").onclick=function(){step(-1)};$("dn").onclick=function(){step(1)};
+$("mb").onclick=function(){$("menu").classList.toggle("on");$("sub").classList.remove("on")};
+$("jm").onclick=function(){$("sub").classList.toggle("on")};
+document.addEventListener("click",function(ev){if(!ev.target.closest(".menu")&&!ev.target.closest("#mb")){$("menu").classList.remove("on");$("sub").classList.remove("on")}});
+var tabs=[],V={
+"Журнал назначений":[["Пациент","Назначение","Время","Статус"],[["Белов А. О.","Метопролол 25 мг","08:00","Выполнено"],["Фёдорова И. М.","Эноксапарин 0,4 мл","09:00","Ожидает"],["Никитин С. П.","ЭКГ","10:30","Ожидает"],["Соколова Н. А.","Перевязка","11:00","Ожидает"]]],
+"Коечный фонд":[["Палата","Коек","Занято","Свободно"],[["201","4","3","1"],["202","4","1","3"],["203","2","2","0"]]],
+"Дежурства и смены":[["Дата","Смена","Врач","Отделение"],[["13.11.2026","Дневная","Иванов А. П.","Сердечно-сосудистая хирургия"],["14.11.2026","Ночная","Петрова Е. С.","Сердечно-сосудистая хирургия"]]],
+"Журнал направлений и выбывших":[["Дата","Пациент","Тип","Куда"],[["12.11.2026","Лебедев К. А.","Выписка","Домой"],["11.11.2026","Мозгова Д. П.","Перевод","Терапия"]]],
+"Журнал медикаментов":[["Препарат","Остаток","Расход за сутки"],[["Метопролол 25 мг","120","14"],["Эноксапарин 0,4 мл","36","6"]]],
+"Отчёты":[["Отчёт","Период","Формат"],[["Движение пациентов","Сутки","PDF"],["Оперативная активность","Месяц","XLSX"],["Занятость коек","Месяц","PDF"]]]
+};
+function view(n){if(n.indexOf("p:")===0)return cardView(n.slice(2));if(n==="Настройки организации")return setView();if(n==="Запись")return recView();if(n==="Записи пациентов")return allAp();if(n==="Журнал изменений")return audView();return jView(n);var v=V[n];
+ return '<h3>'+e(n)+'</h3>'+(v?'<div class="tw"><table><thead><tr>'+v[0].map(function(c){return'<th>'+c+'</th>'}).join("")+'</tr></thead><tbody>'+v[1].map(function(r){return'<tr>'+r.map(function(c){return'<td>'+e(c)+'</td>'}).join("")+'</tr>'}).join("")+'</tbody></table></div>':'<div class="emp">В разделе пока нет записей за выбранный период.</div>')}
+function activate(t){
+ document.querySelectorAll("#tb b").forEach(function(b){b.classList.toggle("on",b.dataset.t===t)});
+ $("app").classList.toggle("alt",t!=="main");
+ if(t!=="main")$("alt").innerHTML=view(t)}
+function openTab(n,l){
+ if(tabs.indexOf(n)<0){tabs.push(n);var b=document.createElement("b");b.dataset.t=n;b.innerHTML=e(l||n)+'<i data-x="1" title="Закрыть">×</i>';$("tb").appendChild(b)}
+ activate(n);$("menu").classList.remove("on");$("sub").classList.remove("on")}
+$("tb").onclick=function(ev){var b=ev.target.closest("b");if(!b)return;
+ if(ev.target.dataset.x){var t=b.dataset.t,was=b.classList.contains("on");tabs.splice(tabs.indexOf(t),1);b.remove();if(was)activate("main");return}
+ activate(b.dataset.t)};
+$("menu").onclick=function(ev){var i=ev.target.closest(".i,.sub div");if(!i||i.id==="jm")return;openTab(i.firstChild.textContent.trim())};
+$("r1").onclick=function(){activate("main")};
+$("r2").onclick=function(){openTab("Журнал назначений")};
+$("r3").onclick=function(){openTab("Отчёты")};
+
+function ls(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(x){return d}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(x){}}
+var U=ls('mis_u',{}),O=ls('mis_o',[]),S=ls('mis_s',null),org=null,code=null,pend=null,scr=$('scr');
+var TG=/^[A-Za-z0-9_]{5,32}$/;
+var DEF_BOT='9174150987:AAEQ_3yvJp3Hq6vQAEdDuSeO-kWWVyWa4Co';
+var BOT=ls('mis_bot',DEF_BOT),CHATS=ls('mis_chat',{}),pollT=null,reqSeq=0;
+function tgApi(m,p,tok){var q='';if(p)q='?'+Object.keys(p).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(p[k])}).join('&');
+ return fetch('https://api.telegram.org/bot'+(tok||BOT)+'/'+m+q).then(function(r){return r.json()})}
+function showCode(msg){var rc=$('rc');if(!rc)return;
+ rc.innerHTML='<div class="tg"><b>Telegram</b><br>'+e(msg)+'</div><label for="rk">Код из Telegram</label><input id="rk" inputmode="numeric" maxlength="5" autocomplete="one-time-code"><button class="bt" data-a="ok">Подтвердить</button>'}
+function demoCode(txt){var rc=$('rc');if(!rc)return;
+ rc.innerHTML='<div class="tg"><b>Telegram</b><br>'+e(txt)+' ваш код '+code+'</div><label for="rk">Код из Telegram</label><input id="rk" inputmode="numeric" maxlength="5" autocomplete="one-time-code"><button class="bt" data-a="ok">Подтвердить</button>'}
+function botSend(t,chatId){tgApi('sendMessage',{chat_id:chatId,text:'РБ.МИС · код подтверждения: '+code}).then(function(r){
+ if(r&&r.ok)return showCode('Код отправлен в Telegram — проверьте сообщения от бота.');
+ demoCode('Бот РБ.МИС:')}).catch(function(x){demoCode('Бот РБ.МИС:')})}
+function botRequest(t){var box=$('rc');if(!box)return;var rid=++reqSeq;
+ if(pollT){clearInterval(pollT);pollT=null}
+ tgApi('getMe',null,BOT).then(function(g){
+  if(rid!==reqSeq)return;
+  if(!g||!g.ok)return demoCode('Бот РБ.МИС:');
+  var chat=CHATS[t.toLowerCase()];
+  if(chat)return botSend(t,chat);
+  var nonce=String(Math.floor(100000+Math.random()*900000));
+  box.innerHTML='<div class="tg"><b>Telegram</b><br>Нажмите кнопку — бот пришлёт код в чат через пару секунд. Страницу не перезагружайте.<br><a class="bt" style="display:block;text-align:center;text-decoration:none" href="https://t.me/'+e(g.result.username)+'?start='+nonce+'" target="_blank" rel="noopener">Открыть бота и получить код</a><small style="display:block;margin-top:6px">Не сработало? Отправьте боту вручную: /start '+nonce+'</small></div>';
+  var chk=function(){if(rid!==reqSeq)return;tgApi('getUpdates',{timeout:0}).then(function(r){if(rid!==reqSeq)return;if(!r||!r.ok)return;(r.result||[]).forEach(function(u){var m=u.message||u.edited_message;if(m&&m.text&&new RegExp('(?:^|[^0-9])'+nonce+'(?:[^0-9]|$)').test(m.text)){reqSeq++;clearInterval(pollT);pollT=null;CHATS[t.toLowerCase()]=m.chat.id;sv('mis_chat',CHATS);botSend(t,m.chat.id)}})}).catch(function(){})};
+  chk();pollT=setInterval(chk,2500)}).catch(function(x){if(rid===reqSeq)demoCode('Бот РБ.МИС:')})}
+function R(h,act){if(pollT){clearInterval(pollT);pollT=null}
+ if(S&&S!==ADMIN&&BAN[S.toLowerCase()]){S=null;sv('mis_s',null);org=null;h='<div class="card"><h2>Доступ закрыт</h2><p>Ваш аккаунт заблокирован администратором.</p><button class="bt" data-a="home">На главную</button></div>';act=''}
+ var T=[['home','МЕНЮ']];
+ if(S&&isAdmin())T.push(['mgmt','УПРАВЛЕНИЕ'],['req','ЗАЯВКИ'+(pendN()?' ('+pendN()+')':'')]);
+ if(S)T.push(['nt','УВЕДОМЛЕНИЯ'+(unread()?' ('+unread()+')':'')]);
+ if(!S)T.push(['login','ВХОД'],['reg','РЕГИСТРАЦИЯ']);
+ if(act==='orgs')T.push(['','ОРГАНИЗАЦИЯ']);
+ if(act==='me'||act==='meap')T.push(['me','МОИ ДАННЫЕ'],['meap','МОЯ ЗАПИСЬ']);
+ var on=act==='home'?'home':act==='orgs'?'':act;
+ scr.innerHTML='<div class="hb"><img class="lgi" alt="ЕЦПРБ" src="data:image/png;base64,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"></div><div class="tb2">'+T.map(function(t){return'<b'+(t[0]?' data-a="'+t[0]+'"':'')+(t[0]===on?' class="on"':'')+'>'+t[1]+'</b>'}).join('')+'</div><div class="pg">'+h+'</div>'}
+function err(m,id){var x=$(id||'re');if(x)x.textContent=m}
+function home(){document.body.classList.remove('in');R('<div style="text-align:center;margin-bottom:18px"><h2 style="margin:0;font-weight:500">ЕЦП</h2><div class="sb">Выберите раздел</div></div><div class="tiles"><button class="tile off" disabled><b>Эл. журнал</b><span class="sb">Скоро</span></button><button class="tile off" disabled><b>Покупка билетов</b><span class="sb">Скоро</span></button><button class="tile off" disabled><b>Моя учеба</b><span class="sb">Скоро</span></button><button class="tile" data-a="me"><b>Моё здоровье</b><span class="sb">Мои данные и запись к врачу</span></button><button class="tile" data-a="mis"><b>РБ.МИС</b><span class="sb">Медицинская информационная система</span></button></div>','home')}
+function reg(){R('<div class="card"><h2>Регистрация</h2><p>РБ.МИС</p><label for="rt">Telegram пользователь</label><input id="rt" placeholder="@username" autocapitalize="off" autocomplete="off"><label for="rm">Почта (Gmail)</label><input id="rm" type="email" placeholder="name@gmail.com"><div id="rc"></div><div class="err" id="re"></div><button class="bt" data-a="code">Получить код в Telegram</button></div>','reg')}
+function login(){R('<div class="card"><h2>Вход</h2><p>РБ.МИС</p><label for="lt">Telegram пользователь</label><input id="lt" placeholder="@username" autocapitalize="off" autocomplete="off"><div id="rc"></div><div class="err" id="re"></div><button class="bt" data-a="lcode">Получить код в Telegram</button></div>','login')}
+function loginCode(){
+ var t=$('lt').value.trim().replace(/^@/,'').toLowerCase();
+ if(!TG.test(t))return err('Telegram: 5–32 символа, латиница, цифры и _');
+ if(!U[t])return err('Аккаунт не найден. Откройте вкладку «Регистрация»');
+ if(BAN[t])return err('Аккаунт заблокирован администратором');
+ code=String(Math.floor(10000+Math.random()*90000));pend={t:t,m:U[t]};err('');
+ if(BOT)return botRequest(t);
+ demoCode('Бот РБ.МИС:')}
+function getCode(){
+ var t=$('rt').value.trim().replace(/^@/,'').toLowerCase(),m=$('rm').value.trim().toLowerCase();
+ if(!TG.test(t))return err('Telegram: 5–32 символа, латиница, цифры и _');
+ if(!/^[a-z0-9._+-]+@gmail\.com$/.test(m))return err('Нужна почта Gmail (name@gmail.com)');
+ if(U[t]&&U[t]!==m)return err('Для этого Telegram указана другая почта');
+ if(BAN[t])return err('Этот Telegram заблокирован администратором');
+ code=String(Math.floor(10000+Math.random()*90000));pend={t:t,m:m};err('');
+ if(BOT)return botRequest(t);
+ demoCode('Бот РБ.МИС:')}
+function okCode(){
+ if(!$('rk')||$('rk').value.trim()!==code)return err('Неверный код');
+ U[pend.t]=pend.m;sv('mis_u',U);S=pend.t;sv('mis_s',S);code=null;orgs()}
+function orgs(){
+ var my=[];O.forEach(function(o,i){if(o.sys&&o.sys!=='РБ.МИС')return;var m=o.st.filter(function(x){return x.t===S})[0];if(m)my.push([o,i,m])});
+ var mine=REQ.filter(function(r){return r.from===S}).reverse(),un=unread();
+ R('<div class="card w"><h2>Организации</h2><p>@'+e(S)+'</p>'+(un?'<div class="tg" style="margin:0 0 12px">Новых уведомлений: '+un+' <button class="lk" type="button" data-a="nt">Открыть</button></div>':'')
+ +(my.length?my.map(function(x){return'<button class="tile" data-a="enter" data-i="'+x[1]+'"><b>'+e(x[0].n)+'</b><span class="sb">'+e(x[2].p)+' · '+e(x[0].ch||'')+'</span></button>'}).join(''):'<p>У вас пока нет организаций.</p>')
+ +'<h2 style="margin-top:18px">Для владельца</h2><p>Чтобы подключить свою организацию, отправьте заявку. После одобрения она появится в этом списке.</p><button class="bt" data-a="newo">Создать организацию</button>'
+ +(mine.length?'<h2 style="margin-top:18px">Мои заявки</h2>'+mine.map(function(r){return'<div class="ri" style="display:flex;gap:8px;flex-wrap:wrap"><span style="flex:1"><b>'+e(r.name)+'</b><span class="sb">'+e(r.sys)+' · '+e(r.ch)+' · '+r.date+'</span></span><span class="tg2" style="color:'+RQC[r.st]+'">'+RQN[r.st]+'</span></div>'}).join(''):'')
+ +'<div style="text-align:center;margin-top:18px;padding-top:12px;border-top:1px solid var(--ln)"><button class="lk" type="button" data-a="out">Выйти из аккаунта</button></div></div>','orgs')}
+function newOrg(){R('<div class="card"><h2>Заявка на организацию</h2><p>Заявку рассмотрит владелец платформы</p><label for="rs">Система</label><select id="rs"><option>РБ.МИС</option><option disabled>Эл. журнал</option><option disabled>Покупка билетов</option></select><label for="rc2">Telegram-канал организации</label><input id="rc2" placeholder="@channel" autocapitalize="off" autocomplete="off"><label for="rn">Название организации</label><input id="rn" autocomplete="off"><div class="err" id="ne"></div><button class="bt" data-a="mk">Отправить заявку</button><button class="bt g2" data-a="orgs">Назад</button></div>','orgs')}
+function mkOrg(){
+ var c=$('rc2').value.trim(),n=$('rn').value.trim().replace(/\s+/g,' '),m=c.match(/^(?:https?:\/\/)?(?:t|telegram)\.me\/([A-Za-z0-9_]{5,32})$/i)||c.match(/^@?([A-Za-z0-9_]{5,32})$/);
+ if(!m)return err('Укажите канал в формате @channel','ne');
+ if(!n||n.length>100)return err('Введите название организации','ne');
+ REQ.push({id:uid(),sys:$('rs').value,from:S,ch:'@'+m[1],name:n,date:today(),st:'new'});sv('mis_req',REQ);
+ orgs();dlg('<h3>Заявка отправлена</h3><p>Владелец платформы рассмотрит её. Результат придёт в уведомлениях.</p><div class="mf"><button class="bt2" data-m="x" type="button">Понятно</button></div>')}
+function enter(i){
+ org=O[i];var m=org.st.filter(function(x){return x.t===S})[0];
+ $('tl').textContent='РБ.МИС / '+org.n+' / '+org.ty+' / '+m.p;$('tu').textContent='@'+S;
+ $('mset').style.display=$('mall').style.display=org.ow===S?'':'none';
+ document.body.classList.add('in');syncShift();activate('main')}
+function saveOrg(){if(org.ow==='demo')sv('mis_demo',org);else sv('mis_o',O)}
+function setTl(){var m=org.st.filter(function(x){return x.t===S})[0];$('tl').textContent='РБ.МИС / '+org.n+' / '+org.ty+' / '+(m?m.p:'')}
+function setView(){
+ var pos=org.ty.indexOf('Учеб')===0?['Учитель','Классный руководитель','Завуч','Администратор']:['Врач-терапевт','Врач-хирург','Медсестра','Администратор'];
+ return'<h3>Настройки организации</h3><div class="tg" style="margin:0 0 14px"><b>Смена</b><p class="sb" style="margin:4px 0 8px">Сотрудники могут работать только при открытой смене. Сейчас смена: '+(org.shift?'<b style="color:#2e8b57">открыта</b>':'<b style="color:#c0392b">закрыта</b>')+'</p><button class="bt2'+(org.shift?' g2':'')+'" data-s="shift" type="button">'+(org.shift?'Закрыть смену':'Открыть смену')+'</button></div><div class="tw"><div class="fg" style="margin-bottom:14px"><label>Название<input data-og="n" value="'+qa(org.n)+'"></label><label>Тип<select data-og="ty">'+['Медицинское учреждение','Учебное учреждение'].map(function(o){return'<option'+(o===org.ty?' selected':'')+'>'+o+'</option>'}).join('')+'</select></label><label>Telegram-канал<input data-og="ch" value="'+qa(org.ch)+'"></label></div><table><thead><tr><th>Telegram</th><th>Должность</th><th></th></tr></thead><tbody>'+org.st.map(function(s,i){return'<tr><td>@'+e(s.t)+'</td><td><input class="oi" data-og="p" data-i="'+i+'" list="pl" value="'+qa(s.p)+'" aria-label="Должность"></td><td>'+(s.t===org.ow?'':'<button class="bt g dl" data-s="del" data-i="'+i+'">Удалить</button>')+'</td></tr>'}).join('')+'</tbody></table><div class="sf"><input id="at" placeholder="@telegram сотрудника" autocapitalize="off"><input id="ap" list="pl" placeholder="Должность"><datalist id="pl">'+pos.map(function(p){return'<option value="'+p+'">'}).join('')+'</datalist><button class="bt dl" style="padding:8px 14px" data-s="add">Добавить</button></div><div class="err" id="se"></div><h4 style="margin:22px 0 6px;font-weight:500">Справочник МКБ-10</h4><p class="sb">Сейчас кодов: '+MKB.length+'. Можно загрузить полный справочник: CSV (код;название) или JSON.</p><div class="sf"><input id="mf" type="file" accept=".csv,.txt,.json" style="border:0;padding:0"><button class="bt2" type="button" data-s="mkb">Загрузить</button><button class="bt2 g2" type="button" data-s="mkbr">Сбросить</button></div><div class="err" id="me"></div></div>'}
+$('alt').onclick=function(ev){
+ var a=ev.target.dataset.s;if(!a)return;
+ if(a==='mkb')return impMkb();if(a==='mkbr'){MKB=parseMkb(RAW);try{localStorage.removeItem('mis_mkb')}catch(x){}$('alt').innerHTML=setView();return}
+ if(a==='shift'){org.shift=!org.shift;saveOrg();syncShift();$('alt').innerHTML=setView();return}
+ if(a==='del'){org.st.splice(+ev.target.dataset.i,1)}
+ else{var t=$('at').value.trim().replace(/^@/,'').toLowerCase(),p=$('ap').value.trim();
+  if(!TG.test(t))return err('Telegram: 5–32 символа, латиница, цифры и _','se');
+  if(!p)return err('Укажите должность','se');
+  if(org.st.some(function(x){return x.t===t}))return err('Этот сотрудник уже добавлен','se');
+  org.st.push({t:t,p:p})}
+ saveOrg();$('alt').innerHTML=setView()};
+$('alt').addEventListener('change',function(ev){var g=ev.target.dataset.og;if(!g)return;var v=ev.target.value.trim();
+ if(g==='p'){if(v)org.st[+ev.target.dataset.i].p=v}else if(g==='n'){if(v)org.n=v}else org[g]=v;
+ saveOrg();setTl();$('alt').innerHTML=setView()});
+scr.onclick=function(ev){var b=ev.target.closest('[data-a]');if(!b)return;var a=b.dataset.a;
+ if(a==='mis')(S?orgs():login());else if(a==='req')reqView();else if(a==='nt')ntView();else if(a==='rqok')rqAct(b.dataset.id,1);else if(a==='rqno')rqAct(b.dataset.id,0);else if(a==='home')home();else if(a==='me')(ME&&meFind().length?meInfo():meLogin());else if(a==='melogin')meLogin();else if(a==='mego')meGo();else if(a==='meap')meApt();else if(a==='meout')meOut();else if(a==='mespec'){meSpec=+b.dataset.i;meApt()}else if(a==='mechg'){meSpec=null;meApt()}else if(a==='meslot')meSlot(b.dataset.t);else if(a==='mecan')meCan(b.dataset.id);else if(a==='login')login();else if(a==='reg')reg();else if(a==='lcode')loginCode();else if(a==='code')getCode();else if(a==='ok')okCode();
+ else if(a==='mgmt')mgmtView();else if(a==='ban')banAcc();else if(a==='unban')unbanAcc(b.dataset.t);
+ else if(a==='enter')enter(+b.dataset.i);else if(a==='newo')newOrg();else if(a==='mk')mkOrg();else if(a==='orgs')orgs();
+ else if(a==='out'){S=null;sv('mis_s',null);home()}};
+$('bk').onclick=function(ev){ev.preventDefault();home()};
+
+var AUTH=false,pcT={},okcb=null,dxK=null;
+var MKB=[];
+(function(){var sp=ls('mis_p2',null);if(sp)P=sp;
+ P.forEach(function(x){if(!x.dx)x.dx=x.c?[{c:x.c,x:x.x,dt:x.d}]:[];if(!x.info)x.info={};if(x.note===undefined)x.note='';if(!x.ord)x.ord=[]})})();
+function qa(t){return e(t||'').replace(/"/g,'&quot;')}
+function pad(n){return(n<10?'0':'')+n}
+function today(){var d=new Date();return pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()}
+function toIso(r){var p=(r||'').split('.');return p.length===3?p[2]+'-'+p[1]+'-'+p[0]:''}
+function fromIso(i){var p=(i||'').split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:''}
+function ageOf(iso){var p=iso.split('-'),n=new Date(),a=n.getFullYear()-p[0];if(n<new Date(n.getFullYear(),p[1]-1,p[2]))a--;return a}
+function ageTxt(a){return a+' '+(a%10===1&&a!==11?'год':(a%10>1&&a%10<5&&(a<10||a>20)?'года':'лет'))}
+function short(n){var p=n.trim().split(/\s+/);return p[0]+(p[1]?' '+p[1][0]+'.':'')+(p[2]?p[2][0]+'.':'')}
+function pBy(k){return P.filter(function(x){return x.k===k})[0]}
+function savP(){sv('mis_p2',P)}
+var AUD=ls('mis_aud',[]);
+function aud(a,n){var m=org&&org.st?org.st.filter(function(x){return x.t===S})[0]:null;
+ AUD.unshift({id:uid(),dt:today()+' '+pad(new Date().getHours())+':'+pad(new Date().getMinutes()),w:S||'—',o:org?org.n:'',p:m?m.p:'',a:a,n:n||''});
+ if(AUD.length>300)AUD=AUD.slice(0,300);sv('mis_aud',AUD)}
+function shiftOpen(){return!!(org&&org.shift)}
+function canWork(){if(shiftOpen())return true;dlg('<h3>Смена закрыта</h3><p>Владелец организации не открыл смену, поэтому работать с данными нельзя. Доступен только просмотр.</p><div class="mf"><button class="bt2" data-m="x" type="button">Понятно</button></div>');return false}
+function syncShift(){var b=$('shb');if(b)b.style.display=shiftOpen()?'none':'block'}
+function audView(){var L=AUD.slice().reverse();
+ return'<h3>Журнал изменений</h3><div class="tw"><p class="sb">Всего изменений: '+L.length+'</p><table><thead><tr><th>Время</th><th>Кто</th><th>Организация</th><th>Действие</th><th>Пациент</th></tr></thead><tbody>'+(L.length?L.map(function(r){return'<tr><td>'+e(r.dt)+'</td><td>@'+e(r.w)+(r.p?' · '+e(r.p):'')+'</td><td>'+e(r.o||'—')+'</td><td>'+e(r.a)+'</td><td>'+(r.n?e(r.n):'—')+'</td></tr>'}).join(''):'<tr><td colspan="5" class="emp">Изменений пока нет. Работайте с пациентами — действия будут записываться сюда.</td></tr>')+'</tbody></table></div>'}
+function syncDx(x){x.c=x.dx[0]?x.dx[0].c:'';x.x=x.dx[0]?x.dx[0].x:''}
+function dlg(h){$('mo').innerHTML='<div class="mb">'+h+'</div>';$('mo').classList.add('on')}
+function cdlg(){$('mo').classList.remove('on');okcb=null}
+function ask(t,cb,y){okcb=cb;dlg('<h3>Подтверждение</h3><p>'+t+'</p><div class="mf"><button class="bt2 g2" data-m="x" type="button">Отмена</button><button class="bt2" data-m="yes" type="button">'+(y||'Удалить')+'</button></div>')}
+function enterDemo(){S='demo';org=ls('mis_demo',null)||{n:'Демо-учреждение',ty:'Медицинское учреждение',ch:'',ow:'demo',st:[{t:'demo',p:'Врач'}],shift:true};
+ if(org.shift===undefined)org.shift=true;
+ setTl();$('tu').textContent='Демо-режим';
+ $('mset').style.display=$('mall').style.display='';document.body.classList.add('in');syncShift();activate('main')}
+function openCard(i){var x=P[i];show(i);openTab('p:'+x.k,short(x.n))}
+function delP(i){var x=P[i];if(!canWork())return;ask('Удалить пациента «'+e(x.n)+'»? Карточка и все записи будут удалены.',function(){
+ var j=P.indexOf(x);if(j<0)return;P.splice(j,1);savP();aud('удалил пациента',x.n);var key='p:'+x.k,ti=tabs.indexOf(key);
+ if(ti>=0){tabs.splice(ti,1);var b=document.querySelector('#tb b[data-t="'+key+'"]');if(b)b.remove()}
+ cur=null;$('evl').className='emp';$('evl').textContent='Выберите пациента в списке.';draw()})}
+function addPDlg(){if(!canWork())return;dlg('<h3>Новый пациент</h3><label for="pn">ФИО</label><input id="pn" autocomplete="off" placeholder="Иванов Иван Иванович"><label for="pbd">Дата рождения</label><input id="pbd" type="date" max="'+toIso(today())+'"><label for="ps">Пол</label><select id="ps"><option>Ж</option><option>М</option></select><label for="pw">Палата</label><select id="pw">'+wardSel()+'</select><div class="err" id="pe"></div><div class="mf"><button class="bt2 g2" data-m="x" type="button">Отмена</button><button class="bt2" data-m="sp" type="button">Добавить</button></div>');$('pn').focus()}
+function saveP(){var n=$('pn').value.trim().replace(/\s+/g,' '),b=$('pbd').value;
+ if(n.split(' ').length<2)return err('Укажите фамилию и имя','pe');
+ if(!b||ageOf(b)<0||ageOf(b)>130)return err('Укажите корректную дату рождения','pe');
+ if(wardFull($('pw').value))return err('Палата заполнена. Выберите другую палату.','pe');
+ var k=String(Math.max.apply(null,P.map(function(x){return+x.k||0}).concat([12100000]))+1);
+ P.push({k:k,n:n,b:fromIso(b),a:ageOf(b),s:$('ps').value,g:$('pw').value,t:[],d:today(),c:'',x:'',st:'Лечится',dx:[],info:{},note:'',ord:[],co:org?org.n:'',cb:S});
+ savP();cdlg();draw();openTab('p:'+k,short(n));aud('добавил пациента',n)}
+function dxDlg(k,ix){dxK=k;dxI=ix===undefined?null:ix;var d=dxI===null?{c:'',x:'',dt:today()}:pBy(k).dx[dxI];dlg('<h3>'+(dxI===null?'Добавить':'Изменить')+' диагноз</h3><label for="dc">Код МКБ-10</label><input id="dc" autocomplete="off" value="'+qa(d.c)+'" placeholder="Например, I10"><label for="dtx">Диагноз</label><input id="dtx" autocomplete="off" value="'+qa(d.x)+'"><div id="ms"></div><label for="ddt">Дата</label><input id="ddt" type="date" value="'+toIso(d.dt)+'"><div class="err" id="de"></div><div class="mf"><button class="bt2 g2" data-m="x" type="button">Отмена</button><button class="bt2" data-m="sdx" type="button">Сохранить</button></div>');$('dc').focus()}
+function saveDx(){var x=pBy(dxK);if(!x)return cdlg();var c=$('dc').value.trim().toUpperCase(),t=$('dtx').value.trim(),d=$('ddt').value;
+ if(!c&&!t)return err('Укажите код или название диагноза','de');
+ if(!d)return err('Укажите дату','de');
+ var rec={c:c,x:t,dt:fromIso(d)},act=dxI===null?'добавил':'изменил';if(dxI===null)x.dx.push(rec);else x.dx[dxI]=rec;x.dx.sort(function(a,b){return toIso(a.dt)<toIso(b.dt)?1:-1});
+ syncDx(x);savP();cdlg();draw();$('alt').innerHTML=cardView(x.k);aud(act+' диагноз: '+(c?c+' ':'')+'«'+t+'»',x.n)}
+function fld(l,f,v,ty,opt){
+ return'<label>'+l+(opt?'<select data-f="'+f+'">'+opt.map(function(o){return'<option'+(o===v?' selected':'')+'>'+o+'</option>'}).join('')+'</select>':'<input data-f="'+f+'"'+(ty?' type="'+ty+'"':'')+' value="'+qa(v)+'">')+'</label>'}
+function tlHtml(x,q){q=(q||'').toLowerCase();
+ if(!x.dx.length)return'<div class="emp">Диагнозов пока нет. Нажмите «+ Диагноз».</div>';
+ var h=x.dx.map(function(d,i){if(q&&(d.c+' '+d.x).toLowerCase().indexOf(q)<0)return'';
+  return'<div class="dxc"><span class="dxd">'+d.dt.slice(0,6)+d.dt.slice(8)+'</span><i class="dxo"></i><span class="dxt"><b>'+e(d.c)+'</b> '+e(d.x)+'<span class="sb">'+e(org?org.n:'')+'</span></span><button class="rm" type="button" data-c="edx" data-i="'+i+'" aria-label="Изменить диагноз">✎</button><button class="rm" type="button" data-c="dx" data-i="'+i+'" aria-label="Удалить диагноз">×</button></div>'}).join('');
+ return h||'<div class="emp">Ничего не найдено.</div>'}
+function pane(x,t){var I=x.info;
+ if(t===0)return'<div class="fg">'+fld('ФИО','n',x.n)+fld('Дата рождения','b',toIso(x.b),'date')+fld('Пол','s',x.s,0,['Ж','М'])+fld('СНИЛС','info.snils',I.snils)+fld('Полис ОМС','info.polis',I.polis)+fld('Телефон','info.tel',I.tel,'tel')+fld('Адрес проживания','info.addr',I.addr)+fld('Группа крови','info.blood',I.blood||'—',0,['—','O(I) Rh+','O(I) Rh−','A(II) Rh+','A(II) Rh−','B(III) Rh+','B(III) Rh−','AB(IV) Rh+','AB(IV) Rh−'])+fld('Аллергии','info.allergy',I.allergy)+fld('Telegram аккаунт','info.tg',I.tg)+fld('Дата поступления','d',toIso(x.d),'date')+'<label>Палата<select data-f="g">'+wardSel(x.g)+'</select></label>'+fld('Признаки (через запятую)','tags',x.t.join(', '))+'</div>';
+ if(t===1)return'<div class="fg">'+fld('Место работы','info.work',I.work)+fld('Должность','info.job',I.job)+fld('Семейное положение','info.fam',I.fam||'—',0,['—','Не женат / не замужем','Женат / замужем','Разведён(а)','Вдовец / вдова'])+fld('Контактное лицо','info.contact',I.contact)+'</div><div class="fg" style="margin-top:12px"><label>Прочая информация<textarea data-f="note" placeholder="Любые заметки о пациенте">'+e(x.note)+'</textarea></label></div>';
+ return'<div class="sf2"><input id="on" placeholder="Назначение, например, ЭКГ" aria-label="Назначение"><button class="bt2" type="button" data-c="addo">Добавить</button></div><div class="err" id="oe"></div>'+(x.ord.length?x.ord.map(function(o,i){return'<div class="ord"><input class="oi" data-o="'+i+'" value="'+qa(o.t)+'" aria-label="Назначение"><span class="sb">'+o.dt+'</span><button class="bt2 g2" type="button" data-c="tgo" data-i="'+i+'">'+o.s+'</button><button class="rm" type="button" data-c="delo" data-i="'+i+'" aria-label="Удалить назначение">×</button></div>'}).join(''):'<div class="emp">Назначений пока нет.</div>')}
+function cardView(k){var x=pBy(k);if(!x)return'<div class="emp">Пациент не найден.</div>';
+ var t=pcT[k]||0,TB=['ЛИЧНАЯ ИНФОРМАЦИЯ','ПРОЧАЯ ИНФОРМАЦИЯ','НАЗНАЧЕНИЯ'];
+ return'<div class="pc" data-k="'+k+'"><div class="ph"><i class="dot '+(x.s==='Ж'?'f':'m')+'"></i><b>'+e(x.n)+'</b><span class="sb">'+x.b+' ('+ageTxt(x.a)+') · КВС '+x.k+'</span><select data-f="st" aria-label="Статус">'+['Лечится','К выписке','В реанимации','Переведён'].map(function(o){return'<option'+(o===x.st?' selected':'')+'>'+o+'</option>'}).join('')+'</select></div>'
+ +'<div class="pin">'+[['ФИО',x.n],['Д/р',x.b],['Пол',x.s==='Ж'?'Женский':'Мужской'],['Палата',x.g],['Поступил',x.d+' ('+days(x.d)+' дн.)'],['Телефон',x.info.tel||'—'],['Источник',(x.co||'—')+(x.cb?' · @'+x.cb:'')]].map(function(r){return'<div><small>'+r[0]+'</small>'+e(r[1])+'</div>'}).join('')+'</div>'
+ +'<div class="pb"><div class="tlp"><div class="tlh"><input data-f="q" placeholder="Быстрый поиск" aria-label="Быстрый поиск по диагнозам"><button class="bt2" type="button" data-c="adx">+ Диагноз</button></div><div id="tl2">'+tlHtml(x,'')+'</div></div>'
+ +'<div class="rp"><div class="rh">'+TB[t]+'</div><div class="rb">'+pane(x,t)+'</div></div></div>'
+ +'<div class="pbar">'+TB.map(function(n,i){return'<b data-c="tab" data-i="'+i+'"'+(i===t?' class="on"':'')+'>'+n+'</b>'}).join('')+'</div></div>'}
+$('alt').addEventListener('click',function(ev){var t=ev.target.closest('[data-c]'),r=ev.target.closest('.pc');if(!t||!r)return;
+ var k=r.dataset.k,x=pBy(k),a=t.dataset.c,i=+t.dataset.i;if(!x)return;
+ var re=function(){savP();$('alt').innerHTML=cardView(k)};
+ if(a==='tab'){pcT[k]=i;$('alt').innerHTML=cardView(k)}
+ else if(!canWork())return;
+ else if(a==='adx')dxDlg(k);else if(a==='edx')dxDlg(k,i);
+ else if(a==='dx')ask('Удалить диагноз «'+e((x.dx[i].c+' '+x.dx[i].x).trim())+'»?',function(){aud('удалил диагноз: '+x.dx[i].c+' '+x.dx[i].x,x.n);x.dx.splice(i,1);syncDx(x);draw();re()});
+ else if(a==='addo'){var v=$('on').value.trim();if(!v)return err('Введите назначение','oe');x.ord.unshift({t:v,dt:today(),s:'Ожидает'});re();aud('добавил назначение «'+v+'»',x.n)}
+ else if(a==='tgo'){x.ord[i].s=x.ord[i].s==='Ожидает'?'Выполнено':'Ожидает';re();aud('назначение «'+x.ord[i].t+'» → '+x.ord[i].s.toLowerCase(),x.n)}
+ else if(a==='delo'){var ov=x.ord[i].t;x.ord.splice(i,1);re();aud('удалил назначение «'+ov+'»',x.n)}});
+$('alt').addEventListener('input',function(ev){var f=ev.target.dataset.f,r=ev.target.closest('.pc');if(!f||!r)return;var x=pBy(r.dataset.k);
+ if(f==='q')$('tl2').innerHTML=tlHtml(x,ev.target.value);else if(f==='note'){if(shiftOpen()){x.note=ev.target.value;savP()}}});
+$('alt').addEventListener('change',function(ev){var f=ev.target.dataset.f,r=ev.target.closest('.pc');if(!f||!r||f==='q'||f==='note')return;
+ var x=pBy(r.dataset.k),v=ev.target.value.trim();if(!x||!canWork())return;
+ var FL={n:'ФИО',b:'дату рождения',s:'пол',g:'палату',st:'статус',d:'дату поступления',tags:'признаки'};
+ if(f==='n'){v=v.replace(/\s+/g,' ');if(v.split(' ').length>=2)x.n=v}
+ else if(f==='b'){if(v&&ageOf(v)>=0&&ageOf(v)<=130){x.b=fromIso(v);x.a=ageOf(v)}}
+ else if(f==='d'){if(v)x.d=fromIso(v)}else if(f==='tags'){x.t=v.split(',').map(function(q){return q.trim()}).filter(Boolean)}else if(f==='g'){if(wardFull(v,x)){var wf=WD.filter(function(w){return w.n===v})[0];dlg('<h3>Палата заполнена</h3><p>'+e(v)+': занято '+wf.cap+' из '+wf.cap+' коек. Выберите другую палату.</p><div class="mf"><button class="bt2" data-m="x" type="button">Понятно</button></div>');return}else x.g=v||'Без палаты'}
+ else if(f.indexOf('info.')===0)x.info[f.slice(5)]=v;
+ else x[f]=v;
+ savP();draw();var b=document.querySelector('#tb b[data-t="p:'+x.k+'"]');if(b)b.firstChild.textContent=short(x.n);
+ aud('изменил '+(FL[f]||(f.indexOf('info.')===0?'сведения: '+f.slice(5):f)),x.n);
+ if(['n','b','s','st','d','g'].indexOf(f)>=0)$('alt').innerHTML=cardView(x.k)});
+$('mo').addEventListener('click',function(ev){var mk=ev.target.closest('[data-mk]');if(mk){var q=mkL[+mk.dataset.mk];$('dc').value=q[0];$('dtx').value=q[1];$('ms').innerHTML='';return}var m=ev.target.dataset.m;
+ if(ev.target===$('mo')||m==='x')return cdlg();
+ if(m==='yes'){var f=okcb;cdlg();if(f)f()}else if(m==='sp')saveP();else if(m==='sdx')saveDx();else if(m==='sap')saveAp();else if(m==='sw')saveWard();else if(m==='sme')saveMe()});
+document.addEventListener('keydown',function(ev){if(ev.key==='Escape')cdlg()});
+document.addEventListener('input',function(ev){var id=ev.target.id;if(id!=='dc'&&id!=='dtx')return;mkL=mkbFind(ev.target.value);
+ $('ms').innerHTML=mkL.map(function(r,i){return'<div class="mi" data-mk="'+i+'"><b>'+e(r[0])+'</b> '+e(r[1])+'</div>'}).join('')});
+var dxI=null,JV=ls('mis_v',{}),DH=['Запись','Описание','Дата'];
+var HDR={'Журнал назначений':['Пациент','Назначение','Время','Статус'],'Коечный фонд':['Палата','Коек','Занято','Свободно'],'Дежурства и смены':['Дата','Смена','Врач','Отделение'],'Журнал направлений и выбывших':['Дата','Пациент','Тип','Куда'],'Журнал медикаментов':['Препарат','Остаток','Расход за сутки'],'Отчёты':['Отчёт','Период','Формат']};
+function wardOpts(){var w=['Без палаты','Палата 201','Палата 202'];P.forEach(function(x){if(w.indexOf(x.g)<0)w.push(x.g)});return w.map(function(o){return'<option value="'+qa(o)+'">'}).join('')}
+function jView(n){var H=HDR[n]||DH,L=JV[n]||[];
+ return'<h3>'+e(n)+'</h3><div class="jv" data-j="'+qa(n)+'"><div class="tw"><button class="bt2" type="button" data-v="add">+ Добавить запись</button><table><thead><tr>'+H.map(function(c){return'<th>'+c+'</th>'}).join('')+'<th></th></tr></thead><tbody>'+(L.length?L.map(function(r,ri){return'<tr>'+r.map(function(c,ci){return'<td><input data-r="'+ri+'" data-ci="'+ci+'" value="'+qa(c)+'" aria-label="'+qa(H[ci])+'"></td>'}).join('')+'<td><button class="rm" type="button" data-v="del" data-i="'+ri+'" aria-label="Удалить запись">×</button></td></tr>'}).join(''):'<tr><td colspan="'+(H.length+1)+'" class="emp">Записей пока нет.</td></tr>')+'</tbody></table></div></div>'}
+$('alt').addEventListener('click',function(ev){var t=ev.target.closest('[data-v]'),r=ev.target.closest('.jv');if(!t||!r)return;
+ var n=r.dataset.j,H=HDR[n]||DH,L=JV[n]=JV[n]||[];if(!canWork())return;
+ if(t.dataset.v==='add')L.push(H.map(function(){return''}));else L.splice(+t.dataset.i,1);
+ sv('mis_v',JV);$('alt').innerHTML=jView(n)});
+$('alt').addEventListener('input',function(ev){var c=ev.target.dataset.ci,r=ev.target.closest('.jv');if(c===undefined||!r||!shiftOpen())return;
+ JV[r.dataset.j][+ev.target.dataset.r][+c]=ev.target.value;sv('mis_v',JV)});
+$('alt').addEventListener('change',function(ev){var i=ev.target.dataset.o,r=ev.target.closest('.pc');if(i===undefined||!r)return;
+ var x=pBy(r.dataset.k);if(!x)return;
+ if(!shiftOpen()){ev.target.value=x.ord[+i].t;return}
+ var v=ev.target.value.trim();if(v)x.ord[+i].t=v;else ev.target.value=x.ord[+i].t;aud('изменил назначение',x.n);savP()});
+var AP=ls('mis_ap',[]),recDate=null,recDoc=null,apE=null,apT='',SCL={'Записан':'var(--d)','Пришёл':'#2e8b57','Не явился':'#c0392b'};
+function recInit(){if(!recDate)recDate=toIso(today());if(recDoc===null){var m=org&&org.st.filter(function(x){return x.t===S})[0];recDoc=m?m.p:'Врач'}}
+function docOpts(){var d=[];(org?org.st:[]).forEach(function(x){if(d.indexOf(x.p)<0)d.push(x.p)});AP.forEach(function(a){if(d.indexOf(a.doc)<0)d.push(a.doc)});return d.map(function(o){return'<option value="'+qa(o)+'">'}).join('')}
+function recView(){recInit();
+ var L=AP.filter(function(a){return a.date===recDate&&a.doc.toLowerCase()===recDoc.toLowerCase()}),T=[];
+ for(var h=8;h<18;h++){T.push(pad(h)+':00');T.push(pad(h)+':30')}
+ L.forEach(function(a){if(T.indexOf(a.time)<0)T.push(a.time)});T.sort();
+ var rows=T.map(function(t){var a=L.filter(function(x){return x.time===t})[0];
+  if(!a)return'<div class="sl"><span class="tm">'+t+'</span><span class="fr">Свободно</span><button class="bt2 g2" type="button" data-rv="book" data-t="'+t+'">Записать</button></div>';
+  return'<div class="sl bk"><span class="tm">'+t+'</span><span style="flex:1;min-width:0"><b>'+e(a.name)+'</b><span class="sb">'+e(a.note)+'</span></span><span class="tg2" style="color:'+SCL[a.st]+'">'+a.st+'</span><button class="rm" type="button" data-rv="edit" data-id="'+a.id+'" aria-label="Изменить запись">✎</button><button class="rm" type="button" data-rv="del" data-id="'+a.id+'" aria-label="Отменить запись">×</button></div>'}).join('');
+ return'<h3>Запись на приём</h3><div class="rv"><div class="rvc"><label>Дата<input type="date" data-rvf="date" value="'+recDate+'"></label><label>Врач<input data-rvf="doc" list="rdl" value="'+qa(recDoc)+'"><datalist id="rdl">'+docOpts()+'</datalist></label><span class="sb" style="padding-bottom:8px">Записано: '+L.length+'</span></div><div class="tw">'+rows+'</div></div>'}
+function apDlg(t,id){if(!canWork())return;apE=id||null;var a=id?AP.filter(function(x){return x.id===id})[0]:{time:t,name:'',note:'',st:'Записан'};
+ dlg('<h3>'+(id?'Запись на приём':'Новая запись')+'</h3><label for="an">Пациент</label><input id="an" list="pln" autocomplete="off" placeholder="ФИО" value="'+qa(a.name)+'"><datalist id="pln">'+P.map(function(x){return'<option value="'+qa(x.n)+'">КВС '+x.k+'</option>'}).join('')+'</datalist><label for="atm">Время</label><input id="atm" type="time" step="900" value="'+a.time+'"><label for="ano">Причина обращения</label><input id="ano" autocomplete="off" value="'+qa(a.note)+'"><label for="ast">Статус</label><select id="ast">'+['Записан','Пришёл','Не явился'].map(function(o){return'<option'+(o===a.st?' selected':'')+'>'+o+'</option>'}).join('')+'</select><div class="err" id="ae"></div><div class="mf"><button class="bt2 g2" data-m="x" type="button">Отмена</button><button class="bt2" data-m="sap" type="button">Сохранить</button></div>');$('an').focus()}
+function saveAp(){var n=$('an').value.trim().replace(/\s+/g,' '),t=$('atm').value;
+ if(!n)return err('Укажите пациента','ae');
+ if(!t)return err('Укажите время','ae');
+ if(AP.some(function(a){return a.id!==apE&&a.date===recDate&&a.doc.toLowerCase()===recDoc.toLowerCase()&&a.time===t}))return err('Это время уже занято','ae');
+ var rec={id:apE||String(Date.now())+Math.floor(Math.random()*1000),date:recDate,doc:recDoc,time:t,name:n,note:$('ano').value.trim(),st:$('ast').value};
+ var i=AP.map(function(a){return a.id}).indexOf(apE);if(apE&&i>=0)AP[i]=rec;else AP.push(rec);
+ sv('mis_ap',AP);cdlg();$('alt').innerHTML=recView();aud('записал на приём',n)}
+$('alt').addEventListener('click',function(ev){var t=ev.target.closest('[data-rv]');if(!t||!ev.target.closest('.rv'))return;var v=t.dataset.rv;if(!canWork())return;
+ if(v==='book')apDlg(t.dataset.t);else if(v==='edit')apDlg('',t.dataset.id);
+ else if(v==='del'){var a=AP.filter(function(x){return x.id===t.dataset.id})[0];if(!a)return;
+  ask('Отменить запись «'+e(a.name)+'» на '+a.time+'?',function(){aud('отменил запись на приём',a.name);AP=AP.filter(function(x){return x.id!==a.id});sv('mis_ap',AP);$('alt').innerHTML=recView()})}});
+$('alt').addEventListener('change',function(ev){var f=ev.target.dataset.rvf;if(!f)return;var v=ev.target.value.trim();
+ if(f==='date'&&v)recDate=v;else if(f==='doc'&&v)recDoc=v;$('alt').innerHTML=recView()});
+$('r4').onclick=function(){openTab('Запись')};
+var WD=ls('mis_w',[]),wI=null;
+function noF(){return!$('fio').value&&!$('dg').value&&!$('a1').value&&!$('a2').value&&!$('sx').value&&!$('st').value&&!$('kv').value&&!$('my').checked&&!ws.length}
+function wardSel(cur){var w=['Без палаты'];WD.forEach(function(x){w.push(x.n)});if(cur&&w.indexOf(cur)<0)w.push(cur);
+ return w.map(function(o){var f=o!==cur&&wardFull(o);return'<option value="'+qa(o)+'"'+(o===cur?' selected':'')+(f?' disabled':'')+'>'+e(o)+(f?' — мест нет':'')+'</option>'}).join('')}
+function wardFull(n,ex){var w=WD.filter(function(x){return x.n===n})[0];return!!w&&P.filter(function(p){return p.g===n&&p!==ex}).length>=w.cap}
+function renderWd(){$('wd').innerHTML=WD.length?WD.map(function(w){return'<button type="button" data-w="'+qa(w.n)+'"'+(ws.indexOf(w.n)>=0?' class="on"':'')+'>'+e(w.n.replace(/^Палата\s*/,''))+'</button>'}).join(''):'<span class="sb">Палат пока нет</span>'}
+function wardDlg(i){wI=i===undefined?null:i;var w=wI===null?{n:'',cap:4}:WD[wI];
+ dlg('<h3>'+(wI===null?'Новая палата':'Палата')+'</h3><label for="wn">Название</label><input id="wn" autocomplete="off" placeholder="Например, Палата 201" value="'+qa(w.n)+'"><label for="wc">Количество коек</label><input id="wc" type="number" min="1" max="99" value="'+w.cap+'"><div class="err" id="we"></div><div class="mf"><button class="bt2 g2" data-m="x" type="button">Отмена</button><button class="bt2" data-m="sw" type="button">Сохранить</button></div>');$('wn').focus()}
+function saveWard(){if(!canWork())return;var n=$('wn').value.trim().replace(/\s+/g,' '),c=Math.floor(+$('wc').value);
+ if(!n)return err('Укажите название палаты','we');
+ if(!(c>=1&&c<=99))return err('Коек должно быть от 1 до 99','we');
+ if(n.toLowerCase()==='без палаты'||WD.some(function(w,j){return j!==wI&&w.n.toLowerCase()===n.toLowerCase()}))return err('Палата с таким названием уже есть','we');
+ if(wI!==null){var oc=P.filter(function(p){return p.g===WD[wI].n}).length;if(c<oc)return err('В палате сейчас '+oc+' пациентов. Коек не может быть меньше.','we')}
+ if(wI===null)WD.push({n:n,cap:c});
+ else{var o=WD[wI].n;WD[wI]={n:n,cap:c};if(o!==n){P.forEach(function(p){if(p.g===o)p.g=n});ws=ws.map(function(x){return x===o?n:x});coll[n]=coll[o];savP()}}
+ sv('mis_w',WD);cdlg();renderWd();draw();aud((wI===null?'создал палату «':'изменил палату на «')+n+'»')}
+function wardAct(a,i){var w=WD[i];if(!w)return;if(!canWork())return;
+ if(a==='edit')return wardDlg(i);
+ ask('Удалить «'+e(w.n)+'»? Пациенты из неё перейдут в «Без палаты».',function(){P.forEach(function(p){if(p.g===w.n)p.g='Без палаты'});ws=ws.filter(function(x){return x!==w.n});WD.splice(i,1);sv('mis_w',WD);savP();renderWd();draw();aud('удалил палату «'+w.n+'»')})}
+$('addw').onclick=function(){if(!canWork())return;wardDlg()};
+renderWd();
+var RAW=`A00|Холера
+A02.0|Сальмонеллёзный энтерит
+A03.9|Шигеллёз неуточнённый
+A04.9|Бактериальная кишечная инфекция неуточнённая
+A09|Диарея и гастроэнтерит предположительно инфекционного происхождения
+A15.0|Туберкулёз лёгких, подтверждённый бактериоскопически
+A16.2|Туберкулёз лёгких без упоминания о бактериологическом или гистологическом подтверждении
+A38|Скарлатина
+A41.9|Септицемия неуточнённая
+A46|Рожа
+A49.9|Бактериальная инфекция неуточнённая
+A69.2|Болезнь Лайма
+B00.9|Герпетическая инфекция неуточнённая
+B01.9|Ветряная оспа без осложнений
+B02.9|Опоясывающий лишай без осложнений
+B05.9|Корь без осложнений
+B06.9|Краснуха без осложнений
+B15.9|Гепатит A без печёночной комы
+B16.9|Острый гепатит B без дельта-агента и без печёночной комы
+B18.2|Хронический вирусный гепатит C
+B24|Болезнь, вызванная вирусом иммунодефицита человека [ВИЧ], неуточнённая
+B26.9|Эпидемический паротит без осложнений
+B34.9|Вирусная инфекция неуточнённая
+B35.1|Дерматофития ногтей
+B37.0|Кандидозный стоматит
+B80|Энтеробиоз
+B86|Чесотка
+B89|Паразитарная болезнь неуточнённая
+C16.9|Злокачественное новообразование желудка неуточнённое
+C18.9|Злокачественное новообразование ободочной кишки неуточнённое
+C20|Злокачественное новообразование прямой кишки
+C34.9|Злокачественное новообразование бронхов или лёгкого неуточнённое
+C43.9|Злокачественная меланома кожи неуточнённая
+C50.0|Злокачественное новообразование соска и ареолы
+C50.9|Злокачественное новообразование молочной железы неуточнённое
+C53.9|Злокачественное новообразование шейки матки неуточнённое
+C61|Злокачественное новообразование предстательной железы
+C64|Злокачественное новообразование почки, кроме почечной лоханки
+C67.9|Злокачественное новообразование мочевого пузыря неуточнённое
+C73|Злокачественное новообразование щитовидной железы
+C91.0|Острый лимфобластный лейкоз
+D12.6|Доброкачественное новообразование ободочной кишки неуточнённое
+D17.9|Доброкачественное липоматозное новообразование неуточнённое
+D25.9|Лейомиома матки неуточнённая
+D50.9|Железодефицитная анемия неуточнённая
+D64.9|Анемия неуточнённая
+E03.9|Гипотиреоз неуточнённый
+E04.9|Нетоксический зоб неуточнённый
+E05.9|Тиреотоксикоз неуточнённый
+E10.9|Инсулинзависимый сахарный диабет без осложнений
+E11.9|Инсулиннезависимый сахарный диабет без осложнений
+E14.9|Сахарный диабет неуточнённый без осложнений
+E66.9|Ожирение неуточнённое
+E78.5|Гиперлипидемия неуточнённая
+E86|Уменьшение объёма жидкости
+F10.2|Психические и поведенческие расстройства, вызванные употреблением алкоголя: синдром зависимости
+F32.9|Депрессивный эпизод неуточнённый
+F41.1|Генерализованное тревожное расстройство
+F41.9|Тревожное расстройство неуточнённое
+F43.2|Расстройство приспособительных реакций
+F51.0|Бессонница неорганической природы
+G20|Болезнь Паркинсона
+G35|Рассеянный склероз
+G40.9|Эпилепсия неуточнённая
+G43.9|Мигрень неуточнённая
+G44.2|Головная боль напряжения
+G45.9|Преходящая транзиторная церебральная ишемия неуточнённая
+G47.3|Апноэ во сне
+G90.8|Другие расстройства вегетативной [автономной] нервной системы
+H10.9|Конъюнктивит неуточнённый
+H25.9|Старческая катаракта неуточнённая
+H40.9|Глаукома неуточнённая
+H52.1|Миопия
+H66.9|Средний отит неуточнённый
+H81.1|Доброкачественное пароксизмальное головокружение
+H91.9|Потеря слуха неуточнённая
+I10|Эссенциальная (первичная) гипертензия
+I11.9|Гипертензивная болезнь сердца без (застойной) сердечной недостаточности
+I20.0|Нестабильная стенокардия
+I20.8|Другие формы стенокардии
+I21.0|Острый трансмуральный инфаркт передней стенки миокарда
+I21.9|Острый инфаркт миокарда неуточнённый
+I22.1|Повторный инфаркт нижней стенки миокарда
+I25.1|Атеросклеротическая болезнь сердца
+I25.9|Хроническая ишемическая болезнь сердца неуточнённая
+I26.9|Лёгочная эмболия без упоминания об остром лёгочном сердце
+I34.0|Митральная (клапанная) недостаточность
+I35.0|Аортальный (клапанный) стеноз
+I42.0|Дилатационная кардиомиопатия
+I47.1|Суправентрикулярная тахикардия
+I48|Фибрилляция и трепетание предсердий
+I49.9|Нарушение сердечного ритма неуточнённое
+I50.0|Застойная сердечная недостаточность
+I50.9|Сердечная недостаточность неуточнённая
+I61.9|Внутримозговое кровоизлияние неуточнённое
+I63.9|Инфаркт мозга неуточнённый
+I64|Инсульт, не уточнённый как кровоизлияние или инфаркт
+I67.8|Другие уточнённые поражения сосудов мозга
+I70.2|Атеросклероз артерий конечностей
+I80.2|Флебит и тромбофлебит других глубоких сосудов нижних конечностей
+I83.9|Варикозное расширение вен нижних конечностей без язвы или воспаления
+I84.9|Геморрой неуточнённый без осложнений
+I95.9|Гипотензия неуточнённая
+J00|Острый назофарингит [насморк]
+J01.9|Острый синусит неуточнённый
+J02.9|Острый фарингит неуточнённый
+J03.9|Острый тонзиллит неуточнённый
+J04.0|Острый ларингит
+J06.0|Острый ларингофарингит
+J06.9|Острая инфекция верхних дыхательных путей неуточнённая
+J11.1|Грипп с другими проявлениями со стороны органов дыхания, вирус не идентифицирован
+J11.8|Грипп с другими проявлениями, вирус не идентифицирован
+J18.9|Пневмония неуточнённая
+J20.9|Острый бронхит неуточнённый
+J30.4|Аллергический ринит неуточнённый
+J31.0|Хронический ринит
+J32.9|Хронический синусит неуточнённый
+J35.0|Хронический тонзиллит
+J44.9|Хроническая обструктивная лёгочная болезнь неуточнённая
+J45.9|Астма неуточнённая
+J96.0|Острая дыхательная недостаточность
+K02.1|Кариес дентина
+K04.7|Периапикальный абсцесс без полостного свища
+K21.0|Гастроэзофагеальный рефлюкс с эзофагитом
+K21.9|Гастроэзофагеальный рефлюкс без эзофагита
+K25.9|Язва желудка неуточнённая как острая или хроническая без кровотечения или прободения
+K26.9|Язва двенадцатиперстной кишки неуточнённая как острая или хроническая без кровотечения или прободения
+K29.1|Другие острые гастриты
+K29.7|Гастрит неуточнённый
+K30|Диспепсия
+K35.8|Острый аппендицит другой и неуточнённый
+K40.9|Односторонняя или без уточнения стороны паховая грыжа без непроходимости или гангрены
+K57.3|Дивертикулярная болезнь толстого кишечника без прободения и абсцесса
+K58.9|Синдром раздражённого кишечника без диареи
+K59.0|Запор
+K70.3|Алкогольный цирроз печени
+K74.6|Другой и неуточнённый цирроз печени
+K76.0|Жировая дегенерация печени, не классифицированная в других рубриках
+K80.2|Камни желчного пузыря без холецистита
+K81.0|Острый холецистит
+K85.9|Острый панкреатит неуточнённый
+K86.1|Другие хронические панкреатиты
+K92.2|Желудочно-кишечное кровотечение неуточнённое
+L20.9|Атопический дерматит неуточнённый
+L23.9|Аллергический контактный дерматит, причина не уточнена
+L30.9|Дерматит неуточнённый
+L40.0|Псориаз обыкновенный
+L50.9|Крапивница неуточнённая
+L70.0|Угри обыкновенные
+M06.9|Ревматоидный артрит неуточнённый
+M10.9|Подагра неуточнённая
+M15.9|Полиартроз неуточнённый
+M17.9|Гонартроз неуточнённый
+M19.9|Артроз неуточнённый
+M42.1|Остеохондроз позвоночника у взрослых
+M47.8|Другие спондилёзы
+M51.1|Поражение межпозвоночного диска поясничного и других отделов с радикулопатией
+M54.2|Цервикалгия
+M54.5|Боль внизу спины
+M75.1|Синдром сдавления ротатора плеча
+M81.9|Остеопороз неуточнённый
+N10|Острый тубулоинтерстициальный нефрит
+N18.9|Хроническая болезнь почек неуточнённая
+N20.0|Камни почки
+N30.0|Острый цистит
+N39.0|Инфекция мочевыводящих путей без установленной локализации
+N40|Гиперплазия предстательной железы
+N41.1|Хронический простатит
+N76.0|Острый вагинит
+N80.9|Эндометриоз неуточнённый
+N92.6|Нерегулярные менструации неуточнённые
+O80|Роды одноплодные, самопроизвольное родоразрешение
+R00.0|Тахикардия неуточнённая
+R05|Кашель
+R06.0|Одышка
+R07.4|Боль в грудной клетке неуточнённая
+R10.4|Другие и неуточнённые боли в области живота
+R11|Тошнота и рвота
+R42|Головокружение и нарушение устойчивости
+R50.9|Лихорадка неуточнённая
+R51|Головная боль
+R55|Обморок [синкопе] и коллапс
+S06.0|Сотрясение головного мозга
+S52.5|Перелом нижнего конца лучевой кости
+S72.0|Перелом шейки бедра
+S82.6|Перелом наружной лодыжки
+S93.4|Растяжение и повреждение связок голеностопного сустава
+T14.9|Травма неуточнённая
+T78.4|Аллергия неуточнённая
+T81.4|Инфекция после процедуры, не классифицированная в других рубриках
+U07.1|COVID-19, вирус идентифицирован
+U07.2|COVID-19, вирус не идентифицирован
+Z00.0|Общий медицинский осмотр
+Z23|Необходимость иммунизации против одной бактериальной болезни
+Z34.9|Наблюдение за нормально протекающей беременностью неуточнённой
+Z51.1|Химиотерапевтический сеанс по поводу злокачественного новообразования
+Z76.0|Повторная выдача рецепта`,mkL=[];
+RAW+='\n'+`A01.0|Брюшной тиф
+A05.9|Бактериальное пищевое отравление неуточнённое
+A08.4|Вирусная кишечная инфекция неуточнённая
+A37.9|Коклюш неуточнённый
+A51.0|Первичный сифилис половых органов
+A54.9|Гонококковая инфекция неуточнённая
+A56.0|Хламидийные инфекции нижних отделов мочеполового тракта
+A60.0|Герпетическая инфекция половых органов и мочеполового тракта
+A63.0|Аногенитальные (венерические) бородавки
+A84.8|Другие клещевые вирусные энцефалиты
+A84.9|Клещевой вирусный энцефалит неуточнённый
+B07|Вирусные бородавки
+B08.2|Экзантема внезапная [шестая болезнь]
+B17.1|Острый гепатит C
+B19.9|Вирусный гепатит без печёночной комы неуточнённый
+B27.9|Инфекционный мононуклеоз неуточнённый
+B30.9|Вирусный конъюнктивит неуточнённый
+B36.0|Разноцветный лишай
+B49|Микоз неуточнённый
+B54|Малярия неуточнённая
+B77.9|Аскаридоз неуточнённый
+B82.9|Кишечный паразитизм неуточнённый
+B85.0|Педикулёз, вызванный Pediculus humanus capitis
+C15.9|Злокачественное новообразование пищевода неуточнённое
+C22.0|Печёночно-клеточный рак
+C25.9|Злокачественное новообразование поджелудочной железы неуточнённое
+C32.9|Злокачественное новообразование гортани неуточнённое
+C44.9|Злокачественное новообразование кожи неуточнённое
+C54.1|Злокачественное новообразование эндометрия
+C56|Злокачественное новообразование яичника
+C71.9|Злокачественное новообразование головного мозга неуточнённое
+C80|Злокачественное новообразование без уточнения локализации
+C81.9|Болезнь Ходжкина неуточнённая
+C85.9|Неходжкинская лимфома неуточнённая
+C90.0|Множественная миелома
+C92.1|Хронический миелоидный лейкоз
+C95.9|Лейкоз неуточнённый
+D18.0|Гемангиома любой локализации
+D22.9|Меланоцитарные невусы неуточнённые
+D24|Доброкачественное новообразование молочной железы
+D27|Доброкачественное новообразование яичника
+D34|Доброкачественное новообразование щитовидной железы
+D35.2|Доброкачественное новообразование гипофиза
+D51.9|Витамин-B12-дефицитная анемия неуточнённая
+D61.9|Апластическая анемия неуточнённая
+D68.9|Нарушение свёртываемости неуточнённое
+D69.3|Идиопатическая тромбоцитопеническая пурпура
+E01.1|Многоузловой зоб, связанный с йодной недостаточностью
+E06.3|Аутоиммунный тиреоидит
+E10.1|Инсулинзависимый сахарный диабет с кетоацидозом
+E11.2|Инсулиннезависимый сахарный диабет с поражением почек
+E11.4|Инсулиннезависимый сахарный диабет с неврологическими осложнениями
+E11.5|Инсулиннезависимый сахарный диабет с нарушениями периферического кровообращения
+E21.0|Первичный гиперпаратиреоз
+E22.1|Гиперпролактинемия
+E24.9|Синдром Иценко-Кушинга неуточнённый
+E27.1|Первичная недостаточность коры надпочечников
+E28.2|Синдром поликистозных яичников
+E46|Белково-энергетическая недостаточность неуточнённая
+E55.9|Недостаточность витамина D неуточнённая
+E66.0|Ожирение, обусловленное избыточным поступлением энергетических ресурсов
+E83.1|Нарушения обмена железа
+E87.1|Гипоосмолярность и гипонатриемия
+E87.6|Гипокалиемия
+F01.9|Сосудистая деменция неуточнённая
+F03|Деменция неуточнённая
+F17.2|Психические и поведенческие расстройства, вызванные употреблением табака: синдром зависимости
+F20.0|Параноидная шизофрения
+F31.9|Биполярное аффективное расстройство неуточнённое
+F33.9|Рекуррентное депрессивное расстройство неуточнённое
+F40.9|Фобическое тревожное расстройство неуточнённое
+F42.9|Обсессивно-компульсивное расстройство неуточнённое
+F43.1|Посттравматическое стрессовое расстройство
+F45.3|Соматоформная вегетативная дисфункция
+F48.0|Неврастения
+F84.0|Детский аутизм
+F90.0|Нарушения активности и внимания
+G03.9|Менингит неуточнённый
+G04.9|Энцефалит, миелит и энцефаломиелит неуточнённые
+G25.0|Эссенциальный тремор
+G30.9|Болезнь Альцгеймера неуточнённая
+G41.9|Эпилептический статус неуточнённый
+G43.0|Мигрень без ауры [простая мигрень]
+G43.1|Мигрень с аурой [классическая мигрень]
+G47.0|Нарушения засыпания и поддержания сна [бессонница]
+G50.0|Невралгия тройничного нерва
+G51.0|Паралич Белла
+G56.0|Синдром запястного канала
+G61.0|Синдром Гийена-Барре
+G62.9|Полиневропатия неуточнённая
+G70.0|Миастения гравис
+G80.9|Детский церебральный паралич неуточнённый
+G81.9|Гемиплегия неуточнённая
+G91.9|Гидроцефалия неуточнённая
+G93.4|Энцефалопатия неуточнённая
+H00.0|Ячмень и другие глубокие воспалительные процессы века
+H01.0|Блефарит
+H11.0|Птеригиум
+H16.9|Кератит неуточнённый
+H20.9|Иридоциклит неуточнённый
+H26.9|Катаракта неуточнённая
+H33.0|Отслойка сетчатки с разрывом сетчатки
+H35.3|Дегенерация макулы и заднего полюса
+H36.0|Диабетическая ретинопатия
+H50.9|Косоглазие неуточнённое
+H52.0|Гиперметропия
+H52.2|Астигматизм
+H52.4|Пресбиопия
+H60.9|Наружный отит неуточнённый
+H61.2|Серная пробка
+H65.9|Негнойный средний отит неуточнённый
+H70.9|Мастоидит неуточнённый
+H72.9|Перфорация барабанной перепонки неуточнённая
+H90.3|Нейросенсорная потеря слуха двусторонняя
+H93.1|Шум в ухе [тиннитус]
+I05.9|Митральный порок сердца неуточнённый
+I12.9|Гипертензивная болезнь с преимущественным поражением почек без почечной недостаточности
+I15.9|Вторичная гипертензия неуточнённая
+I24.9|Острая ишемическая болезнь сердца неуточнённая
+I27.0|Первичная лёгочная гипертензия
+I30.9|Острый перикардит неуточнённый
+I33.0|Острый и подострый инфекционный эндокардит
+I40.9|Острый миокардит неуточнённый
+I44.2|Атриовентрикулярная блокада полная
+I46.9|Остановка сердца неуточнённая
+I51.7|Кардиомегалия
+I60.9|Субарахноидальное кровоизлияние неуточнённое
+I65.2|Закупорка и стеноз сонной артерии
+I69.4|Последствия инсульта, не уточнённого как кровоизлияние или инфаркт
+I71.4|Аневризма брюшной аорты без упоминания о разрыве
+I73.9|Периферическая сосудистая болезнь неуточнённая
+I82.9|Эмболия и тромбоз неуточнённой вены
+I87.2|Венозная недостаточность (хроническая) (периферическая)
+J05.0|Острый обструктивный ларингит [круп]
+J10.1|Грипп с другими респираторными проявлениями, вирус гриппа идентифицирован
+J12.9|Вирусная пневмония неуточнённая
+J13|Пневмония, вызванная Streptococcus pneumoniae
+J15.9|Бактериальная пневмония неуточнённая
+J21.9|Острый бронхиолит неуточнённый
+J22|Острая респираторная инфекция нижних дыхательных путей неуточнённая
+J34.2|Искривление носовой перегородки
+J40|Бронхит, не уточнённый как острый или хронический
+J42|Хронический бронхит неуточнённый
+J43.9|Эмфизема неуточнённая
+J47|Бронхоэктатическая болезнь
+J81|Отёк лёгкого
+J90|Плевральный выпот, не классифицированный в других рубриках
+J93.9|Пневмоторакс неуточнённый
+K01.1|Ретинированные зубы
+K05.1|Хронический гингивит
+K05.3|Хронический пародонтит
+K12.0|Рецидивирующие афты полости рта
+K22.7|Пищевод Барретта
+K29.3|Хронический поверхностный гастрит
+K42.9|Пупочная грыжа без непроходимости или гангрены
+K43.9|Грыжа передней брюшной стенки без непроходимости или гангрены
+K50.9|Болезнь Крона неуточнённая
+K51.9|Язвенный колит неуточнённый
+K52.9|Неинфекционный гастроэнтерит и колит неуточнённый
+K56.7|Илеус неуточнённый
+K60.2|Анальная трещина неуточнённая
+K61.0|Анальный абсцесс
+K62.1|Полип прямой кишки
+K65.0|Острый перитонит
+K72.9|Печёночная недостаточность неуточнённая
+K73.9|Хронический гепатит неуточнённый
+K83.0|Холангит
+K92.0|Рвота кровью [гематемезис]
+K92.1|Мелена
+L01.0|Импетиго
+L02.9|Абсцесс кожи, фурункул и карбункул неуточнённой локализации
+L03.9|Флегмона неуточнённая
+L21.9|Себорейный дерматит неуточнённый
+L22|Подгузниковый дерматит
+L29.9|Зуд неуточнённый
+L42|Розовый лишай
+L43.9|Лишай красный плоский неуточнённый
+L60.0|Вросший ноготь
+L63.9|Гнёздная алопеция неуточнённая
+L72.0|Эпидермальная киста
+L73.2|Гидраденит гнойный
+L84|Мозоли и омозолелости
+L98.4|Хроническая язва кожи, не классифицированная в других рубриках
+M00.9|Пиогенный артрит неуточнённый
+M10.0|Идиопатическая подагра
+M13.9|Артрит неуточнённый
+M16.9|Коксартроз неуточнённый
+M20.1|Вальгусная деформация большого пальца стопы [hallux valgus] (приобретённая)
+M21.4|Плоская стопа [pes planus] (приобретённая)
+M25.5|Боль в суставе
+M32.9|Системная красная волчанка неуточнённая
+M34.9|Системный склероз неуточнённый
+M41.9|Сколиоз неуточнённый
+M45|Анкилозирующий спондилит
+M48.0|Спинальный стеноз
+M50.1|Поражение межпозвоночного диска шейного отдела с радикулопатией
+M54.1|Радикулопатия
+M54.3|Ишиас
+M54.4|Люмбаго с ишиасом
+M54.6|Боль в грудном отделе позвоночника
+M65.9|Синовит и тендосиновит неуточнённый
+M77.1|Латеральный эпикондилит
+M79.1|Миалгия
+M79.6|Боль в конечности
+M86.9|Остеомиелит неуточнённый
+N04.9|Нефротический синдром неуточнённый
+N11.9|Хронический тубулоинтерстициальный нефрит неуточнённый
+N17.9|Острая почечная недостаточность неуточнённая
+N19|Почечная недостаточность неуточнённая
+N23|Почечная колика неуточнённая
+N28.1|Киста почки приобретённая
+N34.1|Неспецифический уретрит
+N43.3|Гидроцеле неуточнённое
+N46|Мужское бесплодие
+N47|Избыточная крайняя плоть, фимоз и парафимоз
+N60.1|Диффузная кистозная мастопатия
+N61|Воспалительные болезни молочной железы
+N63|Образование в молочной железе неуточнённое
+N71.9|Воспалительная болезнь матки неуточнённая
+N72|Воспалительная болезнь шейки матки
+N83.2|Другие и неуточнённые кисты яичника
+N84.0|Полип тела матки
+N85.0|Железистая гиперплазия эндометрия
+N86|Эрозия и эктропион шейки матки
+N87.9|Дисплазия шейки матки неуточнённая
+N91.2|Аменорея неуточнённая
+N93.9|Патологическое маточное и влагалищное кровотечение неуточнённое
+N94.6|Дисменорея неуточнённая
+N95.1|Состояния, связанные с менопаузой и женским климаксом
+N97.9|Женское бесплодие неуточнённое
+O03.9|Самопроизвольный аборт полный или неуточнённый без осложнений
+O13|Вызванная беременностью гипертензия без значительной протеинурии
+O14.9|Преэклампсия неуточнённая
+O21.0|Умеренная рвота беременных
+O24.4|Сахарный диабет, возникший во время беременности
+O60.0|Преждевременные роды без родов
+O99.0|Анемия, осложняющая беременность, деторождение и послеродовой период
+P22.9|Респираторное расстройство у новорождённого неуточнённое
+P59.9|Неонатальная желтуха неуточнённая
+Q21.0|Дефект межжелудочковой перегородки
+Q21.1|Дефект предсердной перегородки
+Q25.0|Открытый артериальный проток
+Q35.9|Расщелина нёба неуточнённая
+Q66.0|Эквиноварусная косолапость
+Q90.9|Синдром Дауна неуточнённый
+R01.1|Сердечный шум неуточнённый
+R03.0|Повышенное кровяное давление без диагноза гипертензии
+R04.0|Носовое кровотечение
+R04.2|Кровохарканье
+R07.0|Боль в горле
+R10.0|Острый живот
+R13|Дисфагия
+R14|Метеоризм и родственные состояния
+R19.7|Диарея неуточнённая
+R20.2|Парестезия кожи
+R21|Сыпь и другие неспецифические кожные высыпания
+R25.1|Тремор неуточнённый
+R30.0|Дизурия
+R31|Гематурия неуточнённая
+R32|Недержание мочи неуточнённое
+R33|Задержка мочи
+R35|Полиурия
+R40.0|Сонливость
+R41.0|Дезориентация неуточнённая
+R52.9|Боль неуточнённая
+R53|Недомогание и утомляемость
+R56.8|Другие и неуточнённые судороги
+R60.0|Локализованный отёк
+R63.0|Анорексия
+R63.4|Патологическая потеря массы тела
+R73.9|Гипергликемия неуточнённая
+R80|Изолированная протеинурия
+S01.9|Открытая рана головы неуточнённая
+S06.9|Внутричерепная травма неуточнённая
+S13.4|Растяжение и повреждение связочного аппарата шейного отдела позвоночника
+S20.2|Ушиб грудной клетки
+S22.3|Перелом ребра
+S30.0|Ушиб нижней части спины и таза
+S42.0|Перелом ключицы
+S42.2|Перелом верхнего конца плечевой кости
+S42.3|Перелом тела [диафиза] плечевой кости
+S60.0|Ушиб пальца(ев) кисти без повреждения ногтевой пластинки
+S61.9|Открытая рана запястья и кисти неуточнённая
+S72.3|Перелом тела [диафиза] бедренной кости
+S81.9|Открытая рана голени неуточнённая
+S82.0|Перелом коленной чашечки
+S82.1|Перелом проксимального отдела большеберцовой кости
+S83.2|Разрыв мениска, свежий
+S90.0|Ушиб голеностопного сустава
+T07|Множественные травмы неуточнённые
+T15.9|Инородное тело в наружной части глаза неуточнённое
+T16|Инородное тело в ухе
+T17.9|Инородное тело в дыхательных путях неуточнённой части
+T30.0|Термический ожог неуточнённой части тела неуточнённой степени
+T78.2|Анафилактический шок неуточнённый
+T78.3|Ангионевротический отёк
+T88.7|Патологическая реакция на лекарственное средство или медикамент неуточнённая
+Z00.1|Рутинное обследование состояния здоровья ребёнка
+Z01.0|Обследование глаз и зрения
+Z01.1|Обследование ушей и слуха
+Z01.7|Лабораторное обследование
+Z02.0|Обследование при поступлении в учебное заведение
+Z02.1|Обследование при приёме на работу
+Z02.7|Выдача медицинского свидетельства
+Z03.9|Наблюдение при подозрении на заболевание или патологическое состояние неуточнённое
+Z30.0|Общие советы и консультации по контрацепции
+Z32.1|Беременность подтверждена
+Z38.0|Один ребёнок, родившийся в стационаре
+Z39.2|Рутинное послеродовое наблюдение
+Z72.0|Употребление табака
+Z95.1|Наличие аортокоронарного шунта
+Z95.5|Наличие коронарного ангиопластического имплантата и трансплантата`;
+function parseMkb(t){return t.split('\n').map(function(l){var i=l.indexOf('|');return i>0?[l.slice(0,i),l.slice(i+1)]:null}).filter(Boolean).sort(function(a,b){return a[0]<b[0]?-1:a[0]>b[0]?1:0})}
+MKB=ls('mis_mkb',null)||parseMkb(RAW);
+function mkbFind(q){q=q.trim().toLowerCase();if(!q)return[];var a=[],b=[];
+ for(var i=0;i<MKB.length&&a.length<10;i++){var r=MKB[i];if(r[0].toLowerCase().indexOf(q)===0)a.push(r);else if(b.length<10&&r[1].toLowerCase().indexOf(q)>=0)b.push(r)}
+ return a.concat(b).slice(0,10)}
+function impMkb(){var f=$('mf').files[0];if(!f)return err('Выберите файл','me');var enc=0,r=new FileReader();
+ r.onload=function(){var t=String(r.result),L=[];
+  if(!enc&&t.indexOf('\uFFFD')>=0){enc=1;r.readAsText(f,'windows-1251');return}
+  try{if(/\.json$/i.test(f.name)||/^\s*[\[{]/.test(t)){var j=JSON.parse(t);if(!Array.isArray(j))j=Object.keys(j).map(function(k){return typeof j[k]==='string'?[k,j[k]]:j[k]});
+    j.forEach(function(o){if(Array.isArray(o))L.push([String(o[0]),String(o[1]||'')]);else{var c=o.code||o.CODE||o.mkb_code||o.id||o.ID,n=o.name||o.NAME||o.title||o.mkb_name||o.text||o.value;if(c)L.push([String(c),String(n||'')])}})}
+   else t.split(/\r?\n/).forEach(function(l){var m=l.match(/^\s*"?([A-Za-zА-Яа-я]\d{2}(?:\.\d{1,2})?)"?\s*[;,\t|]\s*"?(.+?)"?\s*$/);if(m)L.push([m[1],m[2]])})}catch(x){return err('Не удалось прочитать файл','me')}
+  if(!L.length)return err('Коды не найдены. Нужен формат: код;название','me');
+  var M={};MKB.forEach(function(q){M[q[0]]=q[1]});L.forEach(function(q){M[q[0].toUpperCase()]=q[1]});
+  MKB=Object.keys(M).sort().map(function(k){return[k,M[k]]});
+  try{localStorage.setItem('mis_mkb',JSON.stringify(MKB))}catch(x){}
+  $('alt').innerHTML=setView();err('Загружено кодов: '+L.length,'me')};
+ r.readAsText(f)}
+var ME=ls('mis_me',null),meSpec=null,meDate=null,meT='';
+function nt(t){return String(t||'').trim().replace(/^@/,'').toLowerCase()}
+function meFind(){return ME?P.filter(function(x){return nt(x.info&&x.info.tg)===nt(ME)}):[]}
+function orgName(){return O[0]?O[0].n:'Организация'}
+function specs(){var r=[],seen={};
+ function add(o){o.st.forEach(function(s){if(s.p&&s.p!=='Владелец'){var k=o.n+'|'+s.p;if(!seen[k]){seen[k]=1;r.push({org:o.n,p:s.p})}}})}
+ O.forEach(add);return r}
+function meLogin(){R('<div class="card"><h2>Моё здоровье</h2><p>Введите ваш Telegram-аккаунт</p><label for="mt">Telegram</label><input id="mt" placeholder="@username" autocapitalize="off" autocomplete="off" value="'+qa(ME||'')+'"><div class="err" id="mr"></div><button class="bt" data-a="mego">Войти</button></div>','melogin')}
+function meGo(){var t=$('mt').value.trim().replace(/^@/,'');
+ if(!TG.test(t))return err('Telegram: 5–32 символа, латиница, цифры и _','mr');
+ ME=t;if(!meFind().length){ME=null;return err('Вас пока нет ни в одной организации. Попросите врача указать ваш Telegram в карточке пациента.','mr')}
+ sv('mis_me',ME);meInfo()}
+function meOut(){ME=null;meSpec=null;try{localStorage.removeItem('mis_me')}catch(x){}home()}
+function meInfo(){var x=meFind()[0];if(!x)return meLogin();var I=x.info||{};
+ var g=function(l,v){return'<div><small class="sb">'+l+'</small>'+(v?e(v):'—')+'</div>'};
+ R('<div class="card w"><h2>'+e(x.n)+'</h2><p>@'+e(ME)+' · '+e(orgName())+'</p><div class="fg2">'+g('Дата рождения',x.b+' ('+ageTxt(x.a)+')')+g('Пол',x.s==='Ж'?'Женский':'Мужской')+g('Статус',x.st)+g('Палата',x.g)+g('Поступил',x.d)+g('Номер КВС',x.k)+g('Телефон',I.tel)+g('Адрес',I.addr)+g('СНИЛС',I.snils)+g('Полис ОМС',I.polis)+g('Группа крови',I.blood!=='—'?I.blood:'')+g('Аллергии',I.allergy)+'</div></div>'
+ +'<div class="card w" style="margin-top:12px"><h2>Диагнозы</h2>'+(x.dx.length?x.dx.map(function(d){return'<div class="ri"><b>'+e(d.c)+'</b> '+e(d.x)+' <span class="sb">'+d.dt+'</span></div>'}).join(''):'<p>Диагнозов нет.</p>')+'</div>'
+ +'<div class="card w" style="margin-top:12px"><h2>Назначения</h2>'+(x.ord.length?x.ord.map(function(o){return'<div class="ri">'+e(o.t)+' <span class="sb">'+o.dt+' · '+o.s+'</span></div>'}).join(''):'<p>Назначений нет.</p>')+'</div>'
+ +'<div style="text-align:center;margin-top:14px"><button class="lk" type="button" data-a="meout">Выйти</button></div>','me')}
+function meMine(x){return AP.filter(function(a){return nt(a.tg)===nt(ME)||a.k===x.k||a.name.toLowerCase()===x.n.toLowerCase()}).sort(function(a,b){return(a.date+a.time)<(b.date+b.time)?-1:1})}
+function meApt(){var x=meFind()[0];if(!x)return meLogin();var sp=specs(),h='<div class="card w"><h2>Запись к врачу</h2>';
+ if(!meDate)meDate=toIso(today());
+ if(meSpec===null||!sp[meSpec]){meSpec=null;h+='<p>Выберите специалиста</p>'+(sp.length?sp.map(function(s,i){return'<button class="tile" data-a="mespec" data-i="'+i+'"><b>'+e(s.p)+'</b><span class="sb">'+e(s.org)+'</span></button>'}).join(''):'<p>Специалистов пока нет.</p>')}
+ else{var s=sp[meSpec],T=[],n=new Date(),nm=pad(n.getHours())+':'+pad(n.getMinutes());
+  for(var i=8;i<18;i++){T.push(pad(i)+':00');T.push(pad(i)+':30')}
+  T=T.filter(function(t){return!(meDate===toIso(today())&&t<=nm)&&!AP.some(function(a){return a.date===meDate&&a.doc.toLowerCase()===s.p.toLowerCase()&&a.time===t})});
+  h+='<p>'+e(s.p)+' · '+e(s.org)+'<button class="lk" type="button" data-a="mechg">сменить</button></p><label for="medate">Дата</label><input id="medate" type="date" min="'+toIso(today())+'" value="'+meDate+'"><label>Свободное время</label><div class="slg">'+(T.length?T.map(function(t){return'<button class="bt2 g2" type="button" data-a="meslot" data-t="'+t+'">'+t+'</button>'}).join(''):'<span class="sb">На эту дату свободного времени нет.</span>')+'</div>'}
+ var M=meMine(x);
+ h+='</div><div class="card w" style="margin-top:12px"><h2>Мои записи</h2>'+(M.length?M.map(function(a){var up=a.date>=toIso(today())&&a.st==='Записан';return'<div class="ri" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="flex:1"><b>'+fromIso(a.date)+' '+a.time+'</b> · '+e(a.doc)+'<span class="sb">'+e(a.note)+'</span></span><span class="tg2" style="color:'+SCL[a.st]+'">'+a.st+'</span>'+(up?'<button class="bt2 g2" type="button" data-a="mecan" data-id="'+a.id+'">Отменить</button>':'')+'</div>'}).join(''):'<p>Записей пока нет.</p>')+'</div>';
+ R(h,'meap')}
+function meSlot(t){var s=specs()[meSpec];if(!s)return;meT=t;
+ dlg('<h3>Запись к врачу</h3><p>'+e(s.p)+' · '+e(s.org)+'<br>'+fromIso(meDate)+', '+t+'</p><label for="mer">Причина обращения</label><input id="mer" autocomplete="off"><div class="err" id="mee"></div><div class="mf"><button class="bt2 g2" data-m="x" type="button">Отмена</button><button class="bt2" data-m="sme" type="button">Записаться</button></div>');$('mer').focus()}
+function saveMe(){var x=meFind()[0],s=specs()[meSpec];if(!x||!s)return cdlg();
+ if(AP.some(function(a){return a.date===meDate&&a.doc.toLowerCase()===s.p.toLowerCase()&&a.time===meT}))return err('Это время уже занято','mee');
+ AP.push({id:String(Date.now())+Math.floor(Math.random()*1000),date:meDate,doc:s.p,time:meT,name:x.n,note:$('mer').value.trim(),st:'Записан',tg:nt(ME),k:x.k});
+ sv('mis_ap',AP);cdlg();meApt()}
+function meCan(id){var a=AP.filter(function(x){return x.id===id})[0];if(!a)return;
+ ask('Отменить запись на '+fromIso(a.date)+' '+a.time+'?',function(){AP=AP.filter(function(x){return x.id!==id});sv('mis_ap',AP);meApt()},'Отменить запись')}
+scr.addEventListener('change',function(ev){if(ev.target.id==='medate'&&ev.target.value){meDate=ev.target.value;meApt()}});
+function allAp(){var L=AP.slice().sort(function(a,b){return(b.date+b.time)<(a.date+a.time)?-1:1});
+ return'<h3>Записи пациентов</h3><div class="tw"><p class="sb">Всего записей: '+L.length+'</p><table><thead><tr><th>Дата</th><th>Время</th><th>Врач</th><th>Пациент</th><th>Telegram</th><th>Причина</th><th>Статус</th></tr></thead><tbody>'+(L.length?L.map(function(a){return'<tr><td>'+fromIso(a.date)+'</td><td>'+a.time+'</td><td>'+e(a.doc)+'</td><td>'+e(a.name)+'</td><td>'+(a.tg?'@'+e(a.tg):'—')+'</td><td>'+e(a.note||'—')+'</td><td>'+a.st+'</td></tr>'}).join(''):'<tr><td colspan="7" class="emp">Записей пока нет.</td></tr>')+'</tbody></table></div>'}
+var REQ=ls('mis_req',[]),NT=ls('mis_nt',[]),BAN=ls('mis_ban',{}),ADMIN='twynxsz',RQC={new:'var(--d)',ok:'#2e8b57',no:'#c0392b'},RQN={new:'На рассмотрении',ok:'Принята',no:'Отклонена'};
+function uid(){return String(Date.now())+Math.floor(Math.random()*1000)}
+function isAdmin(){return S===ADMIN}
+function unread(){return NT.filter(function(n){return n.to===S&&!n.read}).length}
+function pendN(){return REQ.filter(function(r){return r.st==='new'}).length}
+function reqView(){if(!isAdmin())return home();
+ var L=REQ.slice().reverse(),N=L.filter(function(r){return r.st==='new'}),D=L.filter(function(r){return r.st!=='new'});
+ var it=function(r,a){var f=function(l,v){return'<div><small class="sb">'+l+'</small>'+e(v)+'</div>'};
+  return'<div class="ri"><div class="fg2">'+f('Система',r.sys)+f('Отправитель','@'+r.from)+f('Telegram-канал',r.ch)+f('Организация',r.name)+'</div>'+(a?'<div style="display:flex;gap:8px;margin-top:10px"><button class="bt2" type="button" data-a="rqok" data-id="'+r.id+'">Принять</button><button class="bt2 g2" type="button" data-a="rqno" data-id="'+r.id+'">Отклонить</button></div>':'<div class="sb" style="margin-top:6px">'+r.date+' · <span style="color:'+RQC[r.st]+'">'+RQN[r.st]+'</span></div>')+'</div>'};
+ R('<div class="card w"><h2>Заявки</h2><p>Новых: '+N.length+'</p>'+(N.length?N.map(function(r){return it(r,1)}).join(''):'<p>Новых заявок нет.</p>')+'</div>'+(D.length?'<div class="card w" style="margin-top:12px"><h2>Обработанные</h2>'+D.map(function(r){return it(r,0)}).join('')+'</div>':''),'req')}
+function rqAct(id,ok){if(!isAdmin())return;var r=REQ.filter(function(x){return x.id===id})[0];if(!r||r.st!=='new')return;
+ r.st=ok?'ok':'no';
+ if(ok){O.push({n:r.name,ty:r.sys==='Эл. журнал'?'Учебное учреждение':'Медицинское учреждение',ch:r.ch,ow:r.from,sys:r.sys,st:[{t:r.from,p:'Владелец'}]});sv('mis_o',O)}
+ NT.unshift({id:uid(),to:r.from,date:today(),read:false,text:ok?'Заявка принята: организация «'+r.name+'» ('+r.sys+') создана, вы её владелец.':'Заявка на организацию «'+r.name+'» ('+r.sys+') отклонена.'});
+ sv('mis_req',REQ);sv('mis_nt',NT);reqView()}
+function mgmtView(){if(!isAdmin())return home();
+ var rows=Object.keys(U).map(function(t){var b=BAN[t]?1:0;
+  return'<div class="ri"><div class="fg2"><div><small class="sb">Telegram</small>@'+e(t)+'</div><div><small class="sb">Почта</small>'+e(U[t]||'—')+'</div><div><small class="sb">Статус</small>'+(b?'<span style="color:#c0392b">Заблокирован</span>':'<span style="color:#2e8b57">Активен</span>')+'</div>'+(t===ADMIN?'':'<div><small class="sb">&nbsp;</small><button class="bt2'+(b?' g2':'')+'" type="button" data-a="'+(b?'unban':'ban')+'" data-t="'+e(t)+'">'+(b?'Разблокировать':'Заблокировать')+'</button></div>')+'</div></div>'}).join('');
+ var bl=Object.keys(BAN).map(function(t){return'<div class="ri"><div class="fg2"><div><small class="sb">Telegram</small>@'+e(t)+'</div><div><small class="sb">С</small>'+e(BAN[t].dt||'—')+'</div><div><small class="sb">&nbsp;</small><button class="bt2 g2" type="button" data-a="unban" data-t="'+e(t)+'">Разблокировать</button></div></div></div>'}).join('');
+ R('<div class="card w"><h2>Управление</h2><p>Блокировка работает даже для тех, кто ещё не регистрировался: такой Telegram не сможет ни войти, ни зарегистрироваться.</p><label for="bk2">Telegram пользователь</label><input id="bk2" placeholder="@username" autocapitalize="off" autocomplete="off"><div class="err" id="be2"></div><button class="bt" data-a="ban">Заблокировать</button></div>'+(rows?'<div class="card w" style="margin-top:12px"><h2>Аккаунты ('+Object.keys(U).length+')</h2>'+rows+'</div>':'')+(bl?'<div class="card w" style="margin-top:12px"><h2>Чёрный список ('+Object.keys(BAN).length+')</h2>'+bl+'</div>':''),'mgmt')}
+function banAcc(){if(!isAdmin())return;var t=$('bk2').value.trim().replace(/^@/,'').toLowerCase();
+ if(!TG.test(t))return err('Telegram: 5–32 символа, латиница, цифры и _','be2');
+ if(t===ADMIN)return err('Администратора заблокировать нельзя','be2');
+ BAN[t]={dt:today()};sv('mis_ban',BAN);mgmtView()}
+function unbanAcc(t){if(!isAdmin())return;delete BAN[(t||'').toLowerCase()];sv('mis_ban',BAN);mgmtView()}
+function ntView(){var L=NT.filter(function(n){return n.to===S}),fresh={};
+ L.forEach(function(n){if(!n.read){fresh[n.id]=1;n.read=true}});sv('mis_nt',NT);
+ R('<div class="card w"><h2>Уведомления</h2>'+(L.length?L.map(function(n){return'<div class="ri">'+(fresh[n.id]?'<b>':'')+e(n.text)+(fresh[n.id]?'</b>':'')+'<span class="sb">'+n.date+(fresh[n.id]?' · новое':'')+'</span></div>'}).join(''):'<p>Уведомлений нет.</p>')+'</div>','nt')}
+scr.addEventListener('keydown',function(ev){if(ev.key!=='Enter'||ev.target.tagName!=='INPUT')return;var m={lt:'lcode',rt:'code',bk2:'ban',mt:'mego',rn:'mk',rc2:'mk'}[ev.target.id];if(m)scr.onclick({target:{closest:function(){return{dataset:{a:m}}}}})});
+$('addp').onclick=addPDlg;
+home();
+draw();
+</script></body></html>
