@@ -226,13 +226,14 @@ function cloudPush(){if(!supaCfg())return;
  fetch(SUPA_URL+'/rest/v1/state?on_conflict=id',{method:'POST',headers:{apikey:SUPA_KEY,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},body:JSON.stringify(body)}).catch(function(){})}
 function cloudPull(cb){if(!supaCfg()){if(cb)cb();return}
  fetch(SUPA_URL+'/rest/v1/state?select=id,data',{headers:{apikey:SUPA_KEY}}).then(function(r){return r.json()}).then(function(rows){
-  if(Array.isArray(rows))rows.forEach(function(row){if(SYNCK.indexOf(row.id)>=0&&row.data!==null){try{localStorage.setItem(row.id,JSON.stringify(row.data))}catch(x){}}});
+  if(Array.isArray(rows))rows.forEach(function(row){if(SYNCK.indexOf(row.id)>=0&&row.data!==null&&!pushPend[row.id]){try{localStorage.setItem(row.id,JSON.stringify(row.data))}catch(x){}}});
   reloadState();if(cb)cb()}).catch(function(){if(cb)cb()})}
-function reloadState(){U=ls('mis_u',U);O=ls('mis_o',O);P=ls('mis_p2',P);AUD=ls('mis_aud',AUD);JV=ls('mis_v',JV);AP=ls('mis_ap',AP);WD=ls('mis_w',WD);MKB=ls('mis_mkb',null)||MKB;ME=ls('mis_me',ME);REQ=ls('mis_req',REQ);NT=ls('mis_nt',NT);BAN=ls('mis_ban',BAN)}
+function reloadState(){U=ls('mis_u',U);O=ls('mis_o',O);P=ls('mis_p2',P);AUD=ls('mis_aud',AUD);JV=ls('mis_v',JV);AP=ls('mis_ap',AP);WD=ls('mis_w',WD);MKB=ls('mis_mkb',null)||MKB;ME=ls('mis_me',ME);REQ=ls('mis_req',REQ);NT=ls('mis_nt',NT);BAN=ls('mis_ban',BAN);
+ if(org){var fo=O.filter(function(o){return o.n===org.n&&o.ow===org.ow})[0];if(fo)org=fo}}
 var U=ls('mis_u',{}),O=ls('mis_o',[]),S=ls('mis_s',null),org=null,code=null,pend=null,scr=$('scr');
 var TG=/^[A-Za-z0-9_]{5,32}$/;
-var DEF_BOT='9174150987:AAEQ_3yvJp3Hq6vQAEdDuSeO-kWWVyWa4Co';
-var BOT=ls('mis_bot',DEF_BOT),CHATS=ls('mis_chat',{}),pollT=null,reqSeq=0;
+var DEF_BOT='9133038484:AAHBlPvSnqMX0LnNmSWdO11VB4T3LvtFKeU';
+var BOT=DEF_BOT,CHATS=ls('mis_chat',{}),pollT=null,reqSeq=0;
 function tgApi(m,p,tok){var q='';if(p)q='?'+Object.keys(p).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(p[k])}).join('&');
  return fetch('https://api.telegram.org/bot'+(tok||BOT)+'/'+m+q).then(function(r){return r.json()})}
 function showCode(msg){var rc=$('rc');if(!rc)return;
@@ -241,7 +242,7 @@ function demoCode(txt){var rc=$('rc');if(!rc)return;
  rc.innerHTML='<div class="tg"><b>Telegram</b><br>'+e(txt)+' ваш код '+code+'</div><label for="rk">Код из Telegram</label><input id="rk" inputmode="numeric" maxlength="5" autocomplete="one-time-code"><button class="bt" data-a="ok">Подтвердить</button>'}
 function botSend(t,chatId){tgApi('sendMessage',{chat_id:chatId,text:'РБ.МИС · код подтверждения: '+code}).then(function(r){
  if(r&&r.ok)return showCode('Код отправлен в Telegram — проверьте сообщения от бота.');
- demoCode('Бот РБ.МИС:')}).catch(function(x){demoCode('Бот РБ.МИС:')})}
+ delete CHATS[t.toLowerCase()];sv('mis_chat',CHATS);botRequest(t)}).catch(function(x){delete CHATS[t.toLowerCase()];sv('mis_chat',CHATS);botRequest(t)})}
 function botRequest(t){var box=$('rc');if(!box)return;var rid=++reqSeq;
  if(pollT){clearInterval(pollT);pollT=null}
  tgApi('getMe',null,BOT).then(function(g){
@@ -254,7 +255,7 @@ function botRequest(t){var box=$('rc');if(!box)return;var rid=++reqSeq;
   var chk=function(){if(rid!==reqSeq)return;tgApi('getUpdates',{timeout:0}).then(function(r){if(rid!==reqSeq)return;if(!r||!r.ok)return;(r.result||[]).forEach(function(u){var m=u.message||u.edited_message;if(m&&m.text&&new RegExp('(?:^|[^0-9])'+nonce+'(?:[^0-9]|$)').test(m.text)){reqSeq++;clearInterval(pollT);pollT=null;CHATS[t.toLowerCase()]=m.chat.id;sv('mis_chat',CHATS);botSend(t,m.chat.id)}})}).catch(function(){})};
   chk();pollT=setInterval(chk,2500)}).catch(function(x){if(rid===reqSeq)demoCode('Бот РБ.МИС:')})}
 function R(h,act){if(pollT){clearInterval(pollT);pollT=null}
- if(S&&S!==ADMIN&&BAN[S.toLowerCase()]){S=null;sv('mis_s',null);org=null;h='<div class="card"><h2>Доступ закрыт</h2><p>Ваш аккаунт заблокирован администратором.</p><button class="bt" data-a="home">На главную</button></div>';act=''}
+ if(S&&S!==ADMIN&&(BAN[S.toLowerCase()]||!U[S])){S=null;sv('mis_s',null);org=null;h='<div class="card"><h2>Доступ закрыт</h2><p>Аккаунт заблокирован или удалён администратором.</p><button class="bt" data-a="home">На главную</button></div>';act=''}
  var T=[['home','МЕНЮ']];
  if(S&&isAdmin())T.push(['mgmt','УПРАВЛЕНИЕ'],['req','ЗАЯВКИ'+(pendN()?' ('+pendN()+')':'')]);
  if(S)T.push(['nt','УВЕДОМЛЕНИЯ'+(unread()?' ('+unread()+')':'')]);
@@ -288,7 +289,7 @@ function okCode(){
  if(!$('rk')||$('rk').value.trim()!==code)return err('Неверный код');
  U[pend.t]=pend.m;sv('mis_u',U);S=pend.t;sv('mis_s',S);code=null;orgs()}
 function orgs(){
- var my=[];O.forEach(function(o,i){if(o.sys&&o.sys!=='РБ.МИС')return;var m=o.st.filter(function(x){return x.t===S})[0];if(m)my.push([o,i,m])});
+ var my=[];O.forEach(function(o,i){if(o.sys&&o.sys!=='РБ.МИС')return;var m=o.st.filter(function(x){return(x.t||'').toLowerCase()===S})[0];if(m)my.push([o,i,m])});
  var mine=REQ.filter(function(r){return r.from===S}).reverse(),un=unread();
  R('<div class="card w"><h2>Организации</h2><p>@'+e(S)+'</p>'+(un?'<div class="tg" style="margin:0 0 12px">Новых уведомлений: '+un+' <button class="lk" type="button" data-a="nt">Открыть</button></div>':'')
  +(my.length?my.map(function(x){return'<button class="tile" data-a="enter" data-i="'+x[1]+'"><b>'+e(x[0].n)+'</b><span class="sb">'+e(x[2].p)+' · '+e(x[0].ch||'')+'</span></button>'}).join(''):'<p>У вас пока нет организаций.</p>')
@@ -303,7 +304,8 @@ function mkOrg(){
  REQ.push({id:uid(),sys:$('rs').value,from:S,ch:'@'+m[1],name:n,date:today(),st:'new'});sv('mis_req',REQ);
  orgs();dlg('<h3>Заявка отправлена</h3><p>Владелец платформы рассмотрит её. Результат придёт в уведомлениях.</p><div class="mf"><button class="bt2" data-m="x" type="button">Понятно</button></div>')}
 function enter(i){
- org=O[i];var m=org.st.filter(function(x){return x.t===S})[0];
+ org=O[i];var ch=0;org.st.forEach(function(s){var t=(s.t||'').replace(/^@/,'').toLowerCase();if(t!==s.t){s.t=t;ch=1}});if(ch)saveOrg();
+  var m=org.st.filter(function(x){return x.t===S})[0];
  $('tl').textContent='РБ.МИС / '+org.n+' / '+org.ty+' / '+m.p;$('tu').textContent='@'+S;
  $('mset').style.display=$('mall').style.display=org.ow===S?'':'none';
  document.body.classList.add('in');syncShift();activate('main')}
@@ -328,7 +330,7 @@ $('alt').addEventListener('change',function(ev){var g=ev.target.dataset.og;if(!g
  saveOrg();setTl();$('alt').innerHTML=setView()});
 scr.onclick=function(ev){var b=ev.target.closest('[data-a]');if(!b)return;var a=b.dataset.a;
  if(a==='mis')(S?cloudPull(orgs):login());else if(a==='req')cloudPull(reqView);else if(a==='nt')cloudPull(ntView);else if(a==='rqok')rqAct(b.dataset.id,1);else if(a==='rqno')rqAct(b.dataset.id,0);else if(a==='home')home();else if(a==='me')(ME&&meFind().length?meInfo():meLogin());else if(a==='melogin')meLogin();else if(a==='mego')meGo();else if(a==='meap')meApt();else if(a==='meout')meOut();else if(a==='mespec'){meSpec=+b.dataset.i;meApt()}else if(a==='mechg'){meSpec=null;meApt()}else if(a==='meslot')meSlot(b.dataset.t);else if(a==='mecan')meCan(b.dataset.id);else if(a==='login')login();else if(a==='reg')reg();else if(a==='lcode')loginCode();else if(a==='code')getCode();else if(a==='ok')okCode();
- else if(a==='mgmt')cloudPull(mgmtView);else if(a==='ban')banAcc();else if(a==='unban')unbanAcc(b.dataset.t);
+ else if(a==='mgmt')cloudPull(mgmtView);else if(a==='ban')banAcc();else if(a==='unban')unbanAcc(b.dataset.t);else if(a==='odel')odelOrg(+b.dataset.i);else if(a==='udel')udelAcc(b.dataset.t);
  else if(a==='enter')cloudPull(function(){enter(+b.dataset.i)});else if(a==='newo')newOrg();else if(a==='mk')mkOrg();else if(a==='orgs')orgs();
  else if(a==='out'){S=null;sv('mis_s',null);home()}};
 $('bk').onclick=function(ev){ev.preventDefault();home()};
@@ -1077,14 +1079,23 @@ function rqAct(id,ok){if(!isAdmin())return;var r=REQ.filter(function(x){return x
  sv('mis_req',REQ);sv('mis_nt',NT);reqView()}
 function mgmtView(){if(!isAdmin())return home();
  var rows=Object.keys(U).map(function(t){var b=BAN[t]?1:0;
-  return'<div class="ri"><div class="fg2"><div><small class="sb">Telegram</small>@'+e(t)+'</div><div><small class="sb">Почта</small>'+e(U[t]||'—')+'</div><div><small class="sb">Статус</small>'+(b?'<span style="color:#c0392b">Заблокирован</span>':'<span style="color:#2e8b57">Активен</span>')+'</div>'+(t===ADMIN?'':'<div><small class="sb">&nbsp;</small><button class="bt2'+(b?' g2':'')+'" type="button" data-a="'+(b?'unban':'ban')+'" data-t="'+e(t)+'">'+(b?'Разблокировать':'Заблокировать')+'</button></div>')+'</div></div>'}).join('');
+  return'<div class="ri"><div class="fg2"><div><small class="sb">Telegram</small>@'+e(t)+'</div><div><small class="sb">Почта</small>'+e(U[t]||'—')+'</div><div><small class="sb">Статус</small>'+(b?'<span style="color:#c0392b">Заблокирован</span>':'<span style="color:#2e8b57">Активен</span>')+'</div>'+(t===ADMIN?'':'<div><small class="sb">&nbsp;</small><button class="bt2'+(b?' g2':'')+'" type="button" data-a="'+(b?'unban':'ban')+'" data-t="'+e(t)+'">'+(b?'Разблокировать':'Заблокировать')+'</button> <button class="bt2 g2" type="button" data-a="udel" data-t="'+e(t)+'">Удалить</button></div>')+'</div></div>'}).join('');
  var bl=Object.keys(BAN).map(function(t){return'<div class="ri"><div class="fg2"><div><small class="sb">Telegram</small>@'+e(t)+'</div><div><small class="sb">С</small>'+e(BAN[t].dt||'—')+'</div><div><small class="sb">&nbsp;</small><button class="bt2 g2" type="button" data-a="unban" data-t="'+e(t)+'">Разблокировать</button></div></div></div>'}).join('');
- R('<div class="card w"><h2>Управление</h2><p>Блокировка работает даже для тех, кто ещё не регистрировался: такой Telegram не сможет ни войти, ни зарегистрироваться.</p><label for="bk2">Telegram пользователь</label><input id="bk2" placeholder="@username" autocapitalize="off" autocomplete="off"><div class="err" id="be2"></div><button class="bt" data-a="ban">Заблокировать</button></div>'+(rows?'<div class="card w" style="margin-top:12px"><h2>Аккаунты ('+Object.keys(U).length+')</h2>'+rows+'</div>':'')+(bl?'<div class="card w" style="margin-top:12px"><h2>Чёрный список ('+Object.keys(BAN).length+')</h2>'+bl+'</div>':''),'mgmt')}
+ var orows=O.map(function(o,i){return'<div class="ri"><div class="fg2"><div><small class="sb">Организация</small>'+e(o.n)+'</div><div><small class="sb">Владелец</small>@'+e(o.ow)+'</div><div><small class="sb">Канал</small>'+e(o.ch||'—')+'</div><div><small class="sb">Сотрудников</small>'+(o.st?o.st.length:0)+'</div><div><small class="sb">&nbsp;</small><button class="bt2 g2" type="button" data-a="odel" data-i="'+i+'">Удалить</button></div></div></div>'}).join('');
+ R('<div class="card w"><h2>Управление</h2><p>Блокировка работает даже для тех, кто ещё не регистрировался: такой Telegram не сможет ни войти, ни зарегистрироваться.</p><label for="bk2">Telegram пользователь</label><input id="bk2" placeholder="@username" autocapitalize="off" autocomplete="off"><div class="err" id="be2"></div><button class="bt" data-a="ban">Заблокировать</button></div>'+(rows?'<div class="card w" style="margin-top:12px"><h2>Аккаунты ('+Object.keys(U).length+')</h2>'+rows+'</div>':'')+(orows?'<div class="card w" style="margin-top:12px"><h2>Организации ('+O.length+')</h2>'+orows+'</div>':'')+(bl?'<div class="card w" style="margin-top:12px"><h2>Чёрный список ('+Object.keys(BAN).length+')</h2>'+bl+'</div>':''),'mgmt')}
 function banAcc(){if(!isAdmin())return;var t=$('bk2').value.trim().replace(/^@/,'').toLowerCase();
  if(!TG.test(t))return err('Telegram: 5–32 символа, латиница, цифры и _','be2');
  if(t===ADMIN)return err('Администратора заблокировать нельзя','be2');
  BAN[t]={dt:today()};sv('mis_ban',BAN);mgmtView()}
 function unbanAcc(t){if(!isAdmin())return;delete BAN[(t||'').toLowerCase()];sv('mis_ban',BAN);mgmtView()}
+function odelOrg(i){if(!isAdmin())return;var o=O[i];if(!o)return;
+ O.splice(i,1);sv('mis_o',O);
+ NT.unshift({id:uid(),to:o.ow,date:today(),read:false,text:'Организация «'+o.n+'» удалена администратором платформы.'});sv('mis_nt',NT);
+ cloudPull(mgmtView)}
+function udelAcc(t){if(!isAdmin())return;t=(t||'').toLowerCase();if(!t||t===ADMIN)return;
+ delete U[t];sv('mis_u',U);
+ var ch=false;O.forEach(function(o){var st=(o.st||[]).filter(function(s){return s.t!==t});if(st.length!==o.st.length){o.st=st;ch=true}});if(ch)sv('mis_o',O);
+ cloudPull(mgmtView)}
 function ntView(){var L=NT.filter(function(n){return n.to===S}),fresh={};
  L.forEach(function(n){if(!n.read){fresh[n.id]=1;n.read=true}});sv('mis_nt',NT);
  R('<div class="card w"><h2>Уведомления</h2>'+(L.length?L.map(function(n){return'<div class="ri">'+(fresh[n.id]?'<b>':'')+e(n.text)+(fresh[n.id]?'</b>':'')+'<span class="sb">'+n.date+(fresh[n.id]?' · новое':'')+'</span></div>'}).join(''):'<p>Уведомлений нет.</p>')+'</div>','nt')}
