@@ -206,6 +206,8 @@ function openTab(n,l){
  if(tabs.indexOf(n)<0){tabs.push(n);var b=document.createElement("b");b.dataset.t=n;b.innerHTML=e(l||n)+'<i data-x="1" title="Закрыть">×</i>';$("tb").appendChild(b)}
  activate(n);$("menu").classList.remove("on");$("sub").classList.remove("on");cloudPull(function(ch){if(ch)activate(n)})}
 $("tb").onclick=function(ev){var b=ev.target.closest("b");if(!b)return;
+
+строка 208
  if(ev.target.dataset.x){var t=b.dataset.t,was=b.classList.contains("on");tabs.splice(tabs.indexOf(t),1);b.remove();if(was)activate("main");return}
  var n=b.dataset.t;cloudPull(function(ch){if(ch)activate(n)});activate(n)};
 $("menu").onclick=function(ev){var i=ev.target.closest(".i,.sub div");if(!i||i.id==="jm")return;openTab(i.firstChild.textContent.trim())};
