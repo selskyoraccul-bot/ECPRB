@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ЕЦПРБ/ECPRB</title>
+<title>АРМ врача стационара</title>
 <style>
 :root{color-scheme:light;--bg:#fff;--pn:#f5f7f9;--tx:#2b3640;--mu:#7b8894;--ln:#e1e6ea;--gr:#eceff1;--d:#1a73c9;--m:#2196f3;--sel:#e3f0fc;--ch:#f4f6f8;--wn:#fbe6a6;--wt:#6d5300;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box}html,body{height:100%}
@@ -204,42 +204,72 @@ function activate(t){
  if(t!=="main")$("alt").innerHTML=view(t)}
 function openTab(n,l){
  if(tabs.indexOf(n)<0){tabs.push(n);var b=document.createElement("b");b.dataset.t=n;b.innerHTML=e(l||n)+'<i data-x="1" title="Закрыть">×</i>';$("tb").appendChild(b)}
- activate(n);$("menu").classList.remove("on");$("sub").classList.remove("on")}
+ activate(n);$("menu").classList.remove("on");$("sub").classList.remove("on");cloudPull(function(ch){if(ch)activate(n)})}
 $("tb").onclick=function(ev){var b=ev.target.closest("b");if(!b)return;
  if(ev.target.dataset.x){var t=b.dataset.t,was=b.classList.contains("on");tabs.splice(tabs.indexOf(t),1);b.remove();if(was)activate("main");return}
- activate(b.dataset.t)};
+ var n=b.dataset.t;cloudPull(function(ch){if(ch)activate(n)});activate(n)};
 $("menu").onclick=function(ev){var i=ev.target.closest(".i,.sub div");if(!i||i.id==="jm")return;openTab(i.firstChild.textContent.trim())};
 $("r1").onclick=function(){activate("main")};
 $("r2").onclick=function(){openTab("Журнал назначений")};
 $("r3").onclick=function(){openTab("Отчёты")};
 
 var SUPA_URL='https://bcmnktypnnnkivqoabuv.supabase.co',SUPA_KEY='sb_publishable_T1id5uMj1NpTE-ZyHjgLSg_xEW_jjpT';
-var SYNCK=['mis_u','mis_o','mis_p2','mis_aud','mis_v','mis_ap','mis_w','mis_mkb','mis_me','mis_req','mis_nt','mis_ban'],pushT=null,pushPend={};
+var SYNCK=['mis_u','mis_o','mis_p2','mis_aud','mis_v','mis_ap','mis_sh','mis_w','mis_mkb','mis_me','mis_req','mis_nt','mis_ban'],pushT=null,pushPend={},pushFly={},tmap=ls('mis_ts',{});
 function supaCfg(){return SUPA_URL&&SUPA_KEY}
 function ls(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(x){return d}}
 function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(x){}
- if(SYNCK.indexOf(k)>=0)queuePush(k)}
-function queuePush(k){if(!supaCfg())return;pushPend[k]=1;if(pushT)clearTimeout(pushT);pushT=setTimeout(cloudPush,800)}
+ if(SYNCK.indexOf(k)>=0){tmap[k]=Date.now();persistTs();queuePush(k)}}
+function persistTs(){try{localStorage.setItem('mis_ts',JSON.stringify(tmap))}catch(x){}}
+function dMark(k){var d=ls('mis_dirty',{});d[k]=1;try{localStorage.setItem('mis_dirty',JSON.stringify(d))}catch(x){}}
+function dClear(k){var d=ls('mis_dirty',{});delete d[k];try{localStorage.setItem('mis_dirty',JSON.stringify(d))}catch(x){}}
+function queuePush(k){if(!supaCfg())return;dMark(k);pushPend[k]=1;if(pushT)clearTimeout(pushT);pushT=setTimeout(cloudPush,800)}
 function cloudPush(){if(!supaCfg())return;
- var body=Object.keys(pushPend).map(function(k){return{id:k,data:ls(k,null)}});pushPend={};
- if(!body.length)return;
- fetch(SUPA_URL+'/rest/v1/state?on_conflict=id',{method:'POST',headers:{apikey:SUPA_KEY,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},body:JSON.stringify(body)}).catch(function(){})}
+ var ks=Object.keys(pushPend);if(!ks.length)return;
+ var body=ks.map(function(k){return{id:k,data:ls(k,null)}});body.push({id:'mis_ts',data:tmap});
+ ks.forEach(function(k){delete pushPend[k];pushFly[k]=1});
+ fetch(SUPA_URL+'/rest/v1/state?on_conflict=id',{method:'POST',headers:{apikey:SUPA_KEY,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},body:JSON.stringify(body)}).then(function(){ks.forEach(function(k){delete pushFly[k];if(!pushPend[k])dClear(k)})}).catch(function(){
+  ks.forEach(function(k){delete pushFly[k];pushPend[k]=1});
+  if(pushT)clearTimeout(pushT);pushT=setTimeout(cloudPush,3000)})}
 function cloudPull(cb){if(!supaCfg()){if(cb)cb();return}
  fetch(SUPA_URL+'/rest/v1/state?select=id,data',{headers:{apikey:SUPA_KEY}}).then(function(r){return r.json()}).then(function(rows){
-  if(Array.isArray(rows))rows.forEach(function(row){if(SYNCK.indexOf(row.id)>=0&&row.data!==null&&!pushPend[row.id]){try{localStorage.setItem(row.id,JSON.stringify(row.data))}catch(x){}}});
-  reloadState();if(cb)cb()}).catch(function(){if(cb)cb()})}
-function reloadState(){U=ls('mis_u',U);O=ls('mis_o',O);P=ls('mis_p2',P);AUD=ls('mis_aud',AUD);JV=ls('mis_v',JV);AP=ls('mis_ap',AP);WD=ls('mis_w',WD);MKB=ls('mis_mkb',null)||MKB;ME=ls('mis_me',ME);REQ=ls('mis_req',REQ);NT=ls('mis_nt',NT);BAN=ls('mis_ban',BAN);
+  var ch=false;
+  if(Array.isArray(rows)){
+   var dirty=ls('mis_dirty',{}),cts={};
+   rows.forEach(function(row){if(row.id==='mis_ts'&&row.data&&typeof row.data==='object')cts=row.data});
+   Object.keys(cts).forEach(function(k){if((cts[k]||0)>(tmap[k]||0))tmap[k]=cts[k]});persistTs();
+   rows.forEach(function(row){if(row.id==='mis_ts'||SYNCK.indexOf(row.id)<0||row.data===null)return;
+    var ct=cts[row.id]||0,lt=tmap[row.id]||0;
+    if(dirty[row.id]||pushPend[row.id]||pushFly[row.id]){
+     if(ct>lt){try{localStorage.setItem(row.id,JSON.stringify(row.data))}catch(x){}tmap[row.id]=ct;persistTs();dClear(row.id);delete pushPend[row.id];delete pushFly[row.id];ch=true}
+     return}
+    if((row.id in cts)&&ct<lt){queuePush(row.id);return}
+    var s=JSON.stringify(row.data);
+    if(localStorage.getItem(row.id)!==s){try{localStorage.setItem(row.id,s)}catch(x){}ch=true}
+    if(ct>lt){tmap[row.id]=ct;persistTs()}});
+  }
+  reloadState();if(cb)cb(ch)}).catch(function(){if(cb)cb()})}
+function reloadState(){U=ls('mis_u',U);O=ls('mis_o',O);P=ls('mis_p2',P);AUD=ls('mis_aud',AUD);JV=ls('mis_v',JV);AP=ls('mis_ap',AP);SH=ls('mis_sh',SH);WD=ls('mis_w',WD);MKB=ls('mis_mkb',null)||MKB;ME=ls('mis_me',ME);REQ=ls('mis_req',REQ);NT=ls('mis_nt',NT);BAN=ls('mis_ban',BAN);
  if(org){var fo=O.filter(function(o){return o.n===org.n&&o.ow===org.ow})[0];if(fo)org=fo}}
+var curAct='home';
+function autoRedraw(){
+ if(pollT)return;
+ if(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;
+ var y=window.scrollY,sc=document.querySelector('.tlp'),st=sc?sc.scrollTop:0;
+ if(org){var t=null;document.querySelectorAll('#tb b').forEach(function(b){if(b.classList.contains('on'))t=b.dataset.t});
+  if(!t||t==='main')draw();else{try{$("alt").innerHTML=view(t)}catch(x){}}}
+ else{var f={home:home,orgs:orgs,mgmt:mgmtView,req:reqView,nt:ntView,login:login,reg:reg}[curAct];if(f){try{f()}catch(x){}}}
+ window.scrollTo(0,y);if(sc)sc.scrollTop=st}
 var U=ls('mis_u',{}),O=ls('mis_o',[]),S=ls('mis_s',null),org=null,code=null,pend=null,scr=$('scr');
 var TG=/^[A-Za-z0-9_]{5,32}$/;
 var DEF_BOT='9133038484:AAHBlPvSnqMX0LnNmSWdO11VB4T3LvtFKeU';
 var BOT=DEF_BOT,CHATS=ls('mis_chat',{}),pollT=null,reqSeq=0;
 function tgApi(m,p,tok){var q='';if(p)q='?'+Object.keys(p).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(p[k])}).join('&');
- return fetch('https://api.telegram.org/bot'+(tok||BOT)+'/'+m+q).then(function(r){return r.json()})}
+ var u='https://api.telegram.org/bot'+(tok||BOT)+'/'+m+q;
+ return fetch(SUPA_URL.replace(/\/+$/,'')+'/functions/v1/tg/'+m+q,{headers:{apikey:SUPA_KEY}}).then(function(r){if(!r.ok)throw 0;return r.json()}).catch(function(){return fetch(u).then(function(r){return r.json()})})}
 function showCode(msg){var rc=$('rc');if(!rc)return;
  rc.innerHTML='<div class="tg"><b>Telegram</b><br>'+e(msg)+'</div><label for="rk">Код из Telegram</label><input id="rk" inputmode="numeric" maxlength="5" autocomplete="one-time-code"><button class="bt" data-a="ok">Подтвердить</button>'}
-function demoCode(txt){var rc=$('rc');if(!rc)return;
- rc.innerHTML='<div class="tg"><b>Telegram</b><br>'+e(txt)+' ваш код '+code+'</div><label for="rk">Код из Telegram</label><input id="rk" inputmode="numeric" maxlength="5" autocomplete="one-time-code"><button class="bt" data-a="ok">Подтвердить</button>'}
+function botErr(m){var rc=$('rc');if(!rc)return;
+ rc.innerHTML='<div class="tg"><b>Telegram</b><br>'+e(m)+'</div>'}
 function botSend(t,chatId){tgApi('sendMessage',{chat_id:chatId,text:'РБ.МИС · код подтверждения: '+code}).then(function(r){
  if(r&&r.ok)return showCode('Код отправлен в Telegram — проверьте сообщения от бота.');
  delete CHATS[t.toLowerCase()];sv('mis_chat',CHATS);botRequest(t)}).catch(function(x){delete CHATS[t.toLowerCase()];sv('mis_chat',CHATS);botRequest(t)})}
@@ -247,15 +277,18 @@ function botRequest(t){var box=$('rc');if(!box)return;var rid=++reqSeq;
  if(pollT){clearInterval(pollT);pollT=null}
  tgApi('getMe',null,BOT).then(function(g){
   if(rid!==reqSeq)return;
-  if(!g||!g.ok)return demoCode('Бот РБ.МИС:');
+  if(!g||!g.ok)return botErr('Не удалось связаться с Telegram. Нажмите «Получить код» ещё раз.');
   var chat=CHATS[t.toLowerCase()];
   if(chat)return botSend(t,chat);
   var nonce=String(Math.floor(100000+Math.random()*900000));
   box.innerHTML='<div class="tg"><b>Telegram</b><br>Нажмите кнопку — бот пришлёт код в чат через пару секунд. Страницу не перезагружайте.<br><a class="bt" style="display:block;text-align:center;text-decoration:none" href="https://t.me/'+e(g.result.username)+'?start='+nonce+'" target="_blank" rel="noopener">Открыть бота и получить код</a><small style="display:block;margin-top:6px">Не сработало? Отправьте боту вручную: /start '+nonce+'</small></div>';
-  var chk=function(){if(rid!==reqSeq)return;tgApi('getUpdates',{timeout:0}).then(function(r){if(rid!==reqSeq)return;if(!r||!r.ok)return;(r.result||[]).forEach(function(u){var m=u.message||u.edited_message;if(m&&m.text&&new RegExp('(?:^|[^0-9])'+nonce+'(?:[^0-9]|$)').test(m.text)){reqSeq++;clearInterval(pollT);pollT=null;CHATS[t.toLowerCase()]=m.chat.id;sv('mis_chat',CHATS);botSend(t,m.chat.id)}})}).catch(function(){})};
-  chk();pollT=setInterval(chk,2500)}).catch(function(x){if(rid===reqSeq)demoCode('Бот РБ.МИС:')})}
-function R(h,act){if(pollT){clearInterval(pollT);pollT=null}
- if(S&&S!==ADMIN&&(BAN[S.toLowerCase()]||!U[S])){S=null;sv('mis_s',null);org=null;h='<div class="card"><h2>Доступ закрыт</h2><p>Аккаунт заблокирован или удалён администратором.</p><button class="bt" data-a="home">На главную</button></div>';act=''}
+  var chk=function(){if(rid!==reqSeq)return;tgApi('getUpdates',{timeout:0}).then(function(r){if(rid!==reqSeq)return;if(!r||!r.ok)return;(r.result||[]).forEach(function(u){var m=u.message||u.edited_message;if(m&&m.text&&new RegExp('(?:^|[^0-9])'+nonce+'(?:[^0-9]|$)').test(m.text)){reqSeq++;clearInterval(pollT);pollT=null;
+   var mu=((m.chat.username||m.from.username||'')+'').toLowerCase();
+   if(mu!==t){box.innerHTML='<div class="tg"><b>Telegram</b><br>'+(mu?'Вы нажали кнопку из аккаунта <b>@'+e(mu)+'</b>, а в поле указали <b>@'+e(t)+'</b>. Введите свой настоящий @username и получите код заново.':'В вашем Telegram не указан @username — задайте его в настройках Telegram (Настройки → Имя пользователя) и попробуйте снова.')+'</div>';return}
+   CHATS[t.toLowerCase()]=m.chat.id;sv('mis_chat',CHATS);botSend(t,m.chat.id)}})}).catch(function(){})};
+  chk();pollT=setInterval(chk,2500)}).catch(function(x){if(rid===reqSeq)botErr('Не удалось связаться с Telegram. Нажмите «Получить код» ещё раз.')})}
+function R(h,act){curAct=act||'';if(pollT){clearInterval(pollT);pollT=null}
+ if(S&&S!==ADMIN&&(BAN[S.toLowerCase()]||!U[S])){var brs=BAN[S.toLowerCase()]&&BAN[S.toLowerCase()].rs;S=null;sv('mis_s',null);org=null;h='<div class="card"><h2>Доступ закрыт</h2><p>Аккаунт заблокирован или удалён администратором.</p>'+(brs?'<p class="sb">Причина: '+e(brs)+'</p>':'')+'<button class="bt" data-a="home">На главную</button></div>';act=''}
  var T=[['home','МЕНЮ']];
  if(S&&isAdmin())T.push(['mgmt','УПРАВЛЕНИЕ'],['req','ЗАЯВКИ'+(pendN()?' ('+pendN()+')':'')]);
  if(S)T.push(['nt','УВЕДОМЛЕНИЯ'+(unread()?' ('+unread()+')':'')]);
@@ -266,7 +299,7 @@ function R(h,act){if(pollT){clearInterval(pollT);pollT=null}
  scr.innerHTML='<div class="hb"><img class="lgi" alt="ЕЦПРБ" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQUAAAA8CAYAAABvlK9AAAASQUlEQVR42u2debBkVX3HP7/uOzMsAdmXgIlgVLTGFFEgiyxKBYyJIpYmQTEkoUwqRtBgIkvAqKSApLSsuBCoGIxLsKaQJYBREIIELQxFICxlZARZFWZAYBhmYd7r7m/+uL8z73Df7e5zu/u9N3nv/Kpu9Xvd95577j3n9z2//UCFJLX88wBJ50u6U9JGlfSkpOslvad6fqZMmRYhSWr7559IWqvBdIOkV04KGCSZpLakwo+2JMujkinTwgPCuRHjdyR1o/97/n/4bo2kV48DDAEMBvUrg0OmTPNHFhjPzLqSjgeuAjpAy49+NA0sA34AHAZsBjAzNQCElpn1/O/dgN8AXg60gceAW83sp9VzM2XKNLcSgvmxg6QfRdJACk355+mxtJF6X/9c4dLJ4zXtPyvpIkl7Z/tFpkzzBwqFf77dGTEVEMK5PUn/K2l5AJgUCcE/95T0vUp70350ou/vn6T9IlOmTGmg8Gln8OkGoNCLbA+vSmVaSS23FVzv12+J2qq2PxUBw+5+rY35zNlGkSlTH2oBQU//RbcxNGEY8+vbwEtjO8UAhmy7beCPgGPdNrG8z3Xmdotp4JeAs/za1ihA4F6NVrB7RN6ODBKZMkWgEGhUI15Thuq57eEDgBIZvO3nniRpFzeKWgNAaJuZzKxjZr1wrZl1/Ts1sYdkyrSYqYikhUed8TQCKHQpvQUMuj54ECQdCKz0a1NAIfRxT+Bg4Gb/rpuiqjiI7AWcCLwZ2FdSeOZvAqvM7LnghcnTItNSB4XAxDcDH24omvecsVcDD/oKrASp4lWuFnRdCmhyr91TJZTI1Xoi8Elg38opBwPHAWdI+qCZfSMDw1Yv0kKpVL3ITV3nFlfd+PTpc3eQi9zna3sO+z9q+/J2NEwlnmD/Z95V5JLc3l2SGsEleVo0MIMeIhg1/zQyUKZSOPf4uK1BEoJ//lnUxnQUkNX1v2PD6rtSniNTpvkC54WwdxVBnzazzZL+Crg6IBVpwUv/A1zsTJhql9hrmKoxQIV4YJgNJJIQDgMudInEXDKqRUlv/4uS7gAeXmrBUpLM58Iy4A+Bl0TvbV664PPpJjO7w/v0y5TG6E5kW1pjZpdW+twGTgJ2i1TKZcDVZvaj6lhG1x0IvGNCzxn6f4+ZXe/32Q/4/Ybz/HngQeBOM1sXz+ea/u8K/EFF4h+FWsDXzOyJF4FQFOZ8ds3K2ouCmjrRqv1YQ1dk4VLJRVH7qVJCT9IdKegZSQnXNbhPOOcLS1FaiILJdpT0jBaOzon6dErN76tr+rysT/DbiXVSZTTXj5+D/l8e3edNY7TzuKTPSdq/Oh+j+X3QBPt9eLjPVkb2lbVtZucBJwNrHYGCrhaMgm0/bgSOMrPVDVbVoLe8JtUuEEktBpzviNlKMGa+Ajjar28noqWAt0jaqamHYzHhA/Csr57T/jkfxxaXCDZHfQnfTUV9Wden3+uiPsfXDaKpCT7nlN9zQ0Wa7vr3Tdrquf3rFOA2SW8L/Fkj4W4a8R7dynWdmBGoAEPLzP4F+BXgbOA7wE+BnwE/BFYBx5vZMWb2YCogRKi+jxv4GKKeKHpBy4AvmtkVwZswhLkBDvHreong0/Lzfp7EmItFTO2aYz7eRTVOxqKFKT5S+lwk9Nn6PGsTsbt6z1ZC+zakT2GB6vh8vErSOwJ/jtl+kveBCjD0XGJ4AjgfOF/S9n6zF8ysEzG5NdC722bWkXQSsLM/cNFHKqAyQJ8FPuwvJFV3OnAEu4X8he6UzVx9wXYugQjKQLZtARQX8l32IkAMHrpLJR1qZj9wu09vwmNV9AWFSGIIKNQ1s81VfcxX6ySGk1Q4ILwMOL1GpA9gEAPBJko36T+Y2Q1RwJESGBtHWEYAhGngmYwBs97LauCpAcbacSksEo8u8HNuAe5OMD52gFcAezdceLre/gt9mHevyoLW9nttD3yaMs5GQ57jbuefVoPnDmpZf7eeM18sFRCBQarhyoCWA8LPueqxOy/2bPQiMew54CbgOuAGM3soMqyoSVq2D1YTFSC0/VA0MZUxYStY/4WZXTdPRs8iSKQLAAprgSPNbEtCPz9PGZmb4r0I7W8G3uqSeF2bOwK/A1xE6U2Rg2UPOMalhduH3Od3zeyBkfQ3s16ReGKTGgltVys6QQKQtBK4hLLuQh0gPA/8HfAVM/tJxcpqDYOJgli1f8P30XUbxKVmtiUHMc2i5T4e7dgoNXGjQjPgnyu7xgpJU/63+oja3TFUqhW+aM5y45vZRuAySWuBb0e2kZ7//Rbg9oT2W9F1jd77xETBwEQVf+rrKf2o7wN27AMI9wDvNbN7IyBoEUWGNehD8N/u5qJdqn4VYi5WA59pGHOxZNQItze1tgHGnY9nlaRakFI50XqSxm1/lvTrYFGY2X9K+ndmx1GsbCj5NAbfYkKAsNUjIOnXHc1+Czi0soK3KoaUh4A3m9kaN550HAhGZciQD3Gsi16DArB60SqwzPXlEzwHYilM/EzbIAWwcHC4w0EhZvBdU+wzPn+7/RZPj92oXXiLMcFgqwdC0tuAvwZ+rcYg065hTgHvC4BgZtMT6EugjwxAzyD2xf25DjjVzB7IZd8ybUPg0Ouj3gyjnd02UVQW2C4w5ap9J1L3e5NUH0IG4rnAR2sYry60OLhYrjSzm9yoNC4gtChdntOSPgq8jtnJVuH/0J9HKGMwLjOzb0USTwaEPmPtE6itMeTmqrSWJbLJjxPwLcpgqlaNdLxF0iPAd4ErzOyu6twvxmDEkF9whgNCh5lgimKIIQfKPAMb4/5b065ddelJOhU4twYQgmvnGeDrwBXAbWa2virx5DnVlzb4e87G1/kwasx470ah3Yf8/jLgKOBMSf8EnG5mGwMwFCN2OEgIK4HzIiZMccu0gI2UiSP9RKSBYBQBQbBj7A98jNKgGdsRFN3zIuBcM1vTp628Yg0G8aPdrVwwvhE2gPTNZvZ0MBDnVx1rDyZJr6n5bX3i+1XC723gz4HDPJR6jSQrxpwopzHjokrNYzDgcUp/MKQHQIVYhQAEu7j94p3A8cAeNYAQfOynmNmFMRC46JpXvTRxFLcXTZqOAm4hsWDOIlTFqvVG5YgwLem1zBgZ2/5+BNw3BigEF2VQ60XpeTsEuFbSkcCWxqDgqN6VtAMzCUep/trQ0WfMbCp1hajsD/FWygpKbwT2qbEZxPpTG/gbM7vQvRvdDASj6/8TbqvFHMY7bMuaAfD8IFVM0huArwI7RAtpsNF9swGQD/otjMGyCBg+bmZnjCIphICO/SgTh0bRfdZGHewm2i4OoqyNcHRlcgVQqjMq3gWc56jcySLq2GqE5qDNpaaGbQ98RdLGCvOGeby/M6hFgBDm838D/zUksK5HWUHtMV4cHBXa2xU4AfjNqP2gEr5f0sXjeB/2ZaagapNQYlFa/odOish2cTBldNeeEYgM28EK4FPuLi0yIExkUk+KiVsJK9pipRCVmCpN9aL/P+QpA8P49koze2zA75dIugA4s3KfnYATixEHtMdMbkETUAgT6+4UNaX80M7AZQ4IIfIwxYj1PPAfcyD6LlV6itJAPIkMwjARNy/Rd9kdwDcWHXEm8SlmdmuIKxjS/i6SHqcmjDpI52Z2lqspR0QLrYCjxpEU9qkMcIqUEBJCbkxg1pBqfSplyHInARDi+9wfPA3Z1Tj2BG4D7weuAVZM0BYw5eOzVO08GjB/g2t/k0sI/xyp0sP4revnqWbud71SlXw8j4gWUgP2K8Z4kFc2vC5s+nKJmT0ySC9yA2RH0grKKlCjGDN/EqkgGRTGpxfcKt7N73NsSpG2NlMaFf/WzO6ecIJeyL14vua3HUcBhTAh3pCoF4YU7OWU7pSPJSQcBQPkQZSBFk102QAKT1bUnUxjTuRQY2NSEY1LzM4T1+v4EmWZgLqiQc8BP6YMrvuxL2xzlbHb6mf0SH+qGfHlcMqSav1Uh5DUFMSgZcCdwO+Z2TMNEo4OiACiqS77RObjyU7qfpl9mZpJXMAZZvZsAr+15li9qlssVTQAhJj5z6M+VzukeMaegScoaylcYGabEsX5IBnsN0D3GnbtQ3n+ZdoGyYBdXXSvunlj42NvDtU0c37evk5tKRLAIC7L1nNXxpHMBAeFh4lLrD3KTAWlG83s6RH1+31GFIk6wPcHoGGmEd7rHCREpa5e1Qndjv4eVK27rs/bgpTTdZvZXNm7+kVMBlAK9SCOi74LUv/aYgAQxKJLxy2W51GmJXcrgBBcKN+mzDG40cw2xGrHiMjXtHpScOHcAqzORsaJ0sb5Sogagjl1UandPjk0m+r6vAT29BiavCbpL4E3RYt7kPK/W9SBQSXZaAfKgilnUhZNqQJCYMZTzezimhc/So5BOH/lIINIzQoTDDfnuP7byrw8EXEX4PWSNjNTimziWOBtPwCsGXDeTu5fj1fANmVlL3hxkNXBkp72dsOC8Rjw8CIfs8N9d6o6Q+bulLtWvTta0ONwgUuLmIkDGHg5syMpK8ceA7w8YtYYEEKY8bvN7PJJJBuFxCffzOW1DA6OUtSP8CwfMLPvJ+wPkSldHYOyhuZ80Jlm9vcD+nEQ8L0hIBbm4Sf8iOlCMztlkY/XVxNBOPBVCAr8kpndV8SA4Bu1nEEZG71PjZ7XL+HocknLgekJWKZDsZTTmAmUKWqkggAEQdV5CviImX05F12dG6l+jtsP49wbsS825LxOJDEs5bGq8nJcn/QsSa0iyi84ltJLsH8kFYSgoboKLm0Xwz7lEsLYgCBpuWdPHsFMbYQqEMXeDQH3UhZOucQ3yMyAMJlJFR8LOaFT+6Eh6o9Rn78Rt930eZVwffU7zeFYpUoSIXYoZEneDxwX6pMWboU8FLiWMsAo1FRsJ+jvX/bdqkdOOKpUb57ywhJfY/aWb7Hqcjvwb5QRX3eHe2dAmBgVFTF8oe4ZmHiuNqCxmns2uVc76p/VSNN1QFTM0Xuzhs8dFvpVwAfN7KmtlZfckHhJBAhFItoAfCckLo0IBN24erOkE4DPMbtgSgCEeyiNiNdW2ivItRImSespN0pNzWuZpPoQb8Iy5f3ojghQ2w2Zz9PRc4Z5vb7BfN7s18elCDdVnmlD1J5RJpVNrMYlZQTkCtITE7dQpgDcCqwys1sCTwZPnUk62UEh9cUreriVZvZwE9dfdTWX9AuUJdnfS1mJhz6A8HXgZDPbEMVO9Gi+c1SmweNjwC4sXFrzprBNoaTtmPEqNF09Oz6v3x7ZEQrgs2b2IV9IWszeN7QHrEss/rOjA8+LmC64472wz841/LNuEq5yV9t3aXhZF1gfFS2atftaAbxrRORaDzydqieFKktuv3gpcJwP2K9GL65XEW2CTeEW4D0hlzwuUZ1pwvJ0OTme3Ub68gJlWPCoTLN5SPtT0RwepX8bfXHs9/v0OO0n3L87avsOiqqTrgvKbEejWRaiudiyIXX18biBNnAOZW3Hl1TQq6qPhfusB/7YAaG9AHsMLlVpYaGBaZy+FJEhrfGzpkqe/fo2rP+TlGxHHatBfFSMYPgID/S4M/rAOouhVLWLWpcxU3UmrqDU7iPmFMC/mtmDC7Tp6FKWFv7f9iUkbXloc7zjWK8q1Y7zrCnXzvW7nIv2W5QJS01cGuHcH9as7n36bT3gHx0QppjJkxhUFj60u2oUY2amTJQGuBalEX159HemIWLWTZSl0nsNgCSuKjtISghBUW+k3Gi2kzgosYpy3yj7Q2Ra0hSk0I8DX6D0MkDp5n6wck6mGsY9QNJzkrp+DKJp/7zLE6SGFV5t++cqSb3o+mEU+nGvW3AXXM/NlGmpUMvMHqJMdgoVirp9Vu44TPRUt6y2BtkSXErYjjKRqqkxE8r9IabzLtCZRlzwWpLalSMnySW8uLCaX1AjFUxL6kTfbZL0zvi6QaDgn3tJetKv7yVKCuGeV6bcK1OmTHOAqP55nKTba5h3i6SrJb0ulUkjUNhV0hMNQWHaz/2kt1HkUcqUaX6ogLIEuovo1wDXSDoEeDVlUNHPKPML7gsAkhJOHNyVwDrKHPa9mZ3g1PdyP27LQ5Qp0zagSgzQz1oN2wup2WdXDJXDjIxdSU95XYdsZMyUaYGBwdwgU0RHa4y2TNIektYkAEPPVRV5uahsT8iUabFKH5KOiRh+uuL+7FVcot9wMGllKSFTpsUPDA8MUR8ulrRdkDLy28uUafEDwx6SPuEBUFMuJayRdJWk345Vj/zWMmWaf/o//itDUoEW2Q4AAAAASUVORK5CYII="></div><div class="tb2">'+T.map(function(t){return'<b'+(t[0]?' data-a="'+t[0]+'"':'')+(t[0]===on?' class="on"':'')+'>'+t[1]+'</b>'}).join('')+'</div><div class="pg">'+h+'</div>'}
 function err(m,id){var x=$(id||'re');if(x)x.textContent=m}
 function home(){document.body.classList.remove('in');R('<div style="text-align:center;margin-bottom:18px"><h2 style="margin:0;font-weight:500">ЕЦП</h2><div class="sb">Выберите раздел</div></div><div class="tiles"><button class="tile off" disabled><b>Эл. журнал</b><span class="sb">Скоро</span></button><button class="tile off" disabled><b>Покупка билетов</b><span class="sb">Скоро</span></button><button class="tile off" disabled><b>Моя учеба</b><span class="sb">Скоро</span></button><button class="tile" data-a="me"><b>Моё здоровье</b><span class="sb">Мои данные и запись к врачу</span></button><button class="tile" data-a="mis"><b>РБ.МИС</b><span class="sb">Медицинская информационная система</span></button></div>','home')}
-function reg(){R('<div class="card"><h2>Регистрация</h2><p>РБ.МИС</p><label for="rt">Telegram пользователь</label><input id="rt" placeholder="@username" autocapitalize="off" autocomplete="off"><label for="rm">Почта (Gmail)</label><input id="rm" type="email" placeholder="name@gmail.com"><div id="rc"></div><div class="err" id="re"></div><button class="bt" data-a="code">Получить код в Telegram</button></div>','reg')}
+function reg(){R('<div class="card"><h2>Регистрация</h2><p>РБ.МИС</p><label for="rt">Telegram пользователь</label><input id="rt" placeholder="@username" autocapitalize="off" autocomplete="off"><label for="rm">Почта (Gmail)</label><div style="display:flex;gap:6px;align-items:center"><input id="rm" type="email" placeholder="name@gmail.com" style="flex:1;min-width:0"><button class="lk" type="button" data-a="gmail" style="border:1px solid var(--ln);border-radius:4px;padding:3px 8px;background:var(--bg);white-space:nowrap">@gmail.com</button></div><div id="rc"></div><div class="err" id="re"></div><button class="bt" data-a="code">Получить код в Telegram</button></div>','reg')}
 function login(){R('<div class="card"><h2>Вход</h2><p>РБ.МИС</p><label for="lt">Telegram пользователь</label><input id="lt" placeholder="@username" autocapitalize="off" autocomplete="off"><div id="rc"></div><div class="err" id="re"></div><button class="bt" data-a="lcode">Получить код в Telegram</button></div>','login')}
 function loginCode(){
  var t=$('lt').value.trim().replace(/^@/,'').toLowerCase();
@@ -274,8 +307,7 @@ function loginCode(){
  if(!U[t])return err('Аккаунт не найден. Откройте вкладку «Регистрация»');
  if(BAN[t])return err('Аккаунт заблокирован администратором');
  code=String(Math.floor(10000+Math.random()*90000));pend={t:t,m:U[t]};err('');
- if(BOT)return botRequest(t);
- demoCode('Бот РБ.МИС:')}
+ return botRequest(t)}
 function getCode(){
  var t=$('rt').value.trim().replace(/^@/,'').toLowerCase(),m=$('rm').value.trim().toLowerCase();
  if(!TG.test(t))return err('Telegram: 5–32 символа, латиница, цифры и _');
@@ -283,11 +315,10 @@ function getCode(){
  if(U[t]&&U[t]!==m)return err('Для этого Telegram указана другая почта');
  if(BAN[t])return err('Этот Telegram заблокирован администратором');
  code=String(Math.floor(10000+Math.random()*90000));pend={t:t,m:m};err('');
- if(BOT)return botRequest(t);
- demoCode('Бот РБ.МИС:')}
+ return botRequest(t)}
 function okCode(){
  if(!$('rk')||$('rk').value.trim()!==code)return err('Неверный код');
- U[pend.t]=pend.m;sv('mis_u',U);S=pend.t;sv('mis_s',S);code=null;orgs()}
+ U[pend.t]=pend.m;sv('mis_u',U);S=pend.t;sv('mis_s',S);code=null;cloudPull(orgs)}
 function orgs(){
  var my=[];O.forEach(function(o,i){if(o.sys&&o.sys!=='РБ.МИС')return;var m=o.st.filter(function(x){return(x.t||'').toLowerCase()===S})[0];if(m)my.push([o,i,m])});
  var mine=REQ.filter(function(r){return r.from===S}).reverse(),un=unread();
@@ -329,7 +360,7 @@ $('alt').addEventListener('change',function(ev){var g=ev.target.dataset.og;if(!g
  if(g==='p'){if(v)org.st[+ev.target.dataset.i].p=v}else if(g==='n'){if(v)org.n=v}else org[g]=v;
  saveOrg();setTl();$('alt').innerHTML=setView()});
 scr.onclick=function(ev){var b=ev.target.closest('[data-a]');if(!b)return;var a=b.dataset.a;
- if(a==='mis')(S?cloudPull(orgs):login());else if(a==='req')cloudPull(reqView);else if(a==='nt')cloudPull(ntView);else if(a==='rqok')rqAct(b.dataset.id,1);else if(a==='rqno')rqAct(b.dataset.id,0);else if(a==='home')home();else if(a==='me')(ME&&meFind().length?meInfo():meLogin());else if(a==='melogin')meLogin();else if(a==='mego')meGo();else if(a==='meap')meApt();else if(a==='meout')meOut();else if(a==='mespec'){meSpec=+b.dataset.i;meApt()}else if(a==='mechg'){meSpec=null;meApt()}else if(a==='meslot')meSlot(b.dataset.t);else if(a==='mecan')meCan(b.dataset.id);else if(a==='login')login();else if(a==='reg')reg();else if(a==='lcode')loginCode();else if(a==='code')getCode();else if(a==='ok')okCode();
+ if(a==='mis')(S?cloudPull(orgs):login());else if(a==='req')cloudPull(reqView);else if(a==='nt')cloudPull(ntView);else if(a==='rqok')rqAct(b.dataset.id,1);else if(a==='rqno')rqAct(b.dataset.id,0);else if(a==='home')home();else if(a==='me')(ME&&meFind().length?meInfo():meLogin());else if(a==='melogin')meLogin();else if(a==='mego')meGo();else if(a==='meap')meApt();else if(a==='meout')meOut();else if(a==='mespec'){meSpec=+b.dataset.i;meApt()}else if(a==='mechg'){meSpec=null;meApt()}else if(a==='meslot')meSlot(b.dataset.t);else if(a==='mecan')meCan(b.dataset.id);else if(a==='meshdate'){meDate=b.dataset.t;meApt()}else if(a==='login')login();else if(a==='reg')reg();else if(a==='lcode')loginCode();else if(a==='code')getCode();else if(a==='ok')okCode();else if(a==='gmail'){var em=$('rm');if(em){var v=em.value,at=v.indexOf('@');em.value=(at<0?v:v.slice(0,at))+'@gmail.com';em.focus()}}
  else if(a==='mgmt')cloudPull(mgmtView);else if(a==='ban')banAcc();else if(a==='unban')unbanAcc(b.dataset.t);else if(a==='odel')odelOrg(+b.dataset.i);else if(a==='udel')udelAcc(b.dataset.t);
  else if(a==='enter')cloudPull(function(){enter(+b.dataset.i)});else if(a==='newo')newOrg();else if(a==='mk')mkOrg();else if(a==='orgs')orgs();
  else if(a==='out'){S=null;sv('mis_s',null);home()}};
@@ -428,7 +459,7 @@ $('alt').addEventListener('change',function(ev){var f=ev.target.dataset.f,r=ev.t
  if(['n','b','s','st','d','g'].indexOf(f)>=0)$('alt').innerHTML=cardView(x.k)});
 $('mo').addEventListener('click',function(ev){var mk=ev.target.closest('[data-mk]');if(mk){var q=mkL[+mk.dataset.mk];$('dc').value=q[0];$('dtx').value=q[1];$('ms').innerHTML='';return}var m=ev.target.dataset.m;
  if(ev.target===$('mo')||m==='x')return cdlg();
- if(m==='yes'){var f=okcb;cdlg();if(f)f()}else if(m==='sp')saveP();else if(m==='sdx')saveDx();else if(m==='sap')saveAp();else if(m==='sw')saveWard();else if(m==='sme')saveMe()});
+ if(m==='yes'){var f=okcb;cdlg();if(f)f()}else if(m==='sp')saveP();else if(m==='sdx')saveDx();else if(m==='sap')saveAp();else if(m==='sw')saveWard();else if(m==='sme')saveMe();else if(m==='ssh')saveSh()});
 document.addEventListener('keydown',function(ev){if(ev.key==='Escape')cdlg()});
 document.addEventListener('input',function(ev){var id=ev.target.id;if(id!=='dc'&&id!=='dtx')return;mkL=mkbFind(ev.target.value);
  $('ms').innerHTML=mkL.map(function(r,i){return'<div class="mi" data-mk="'+i+'"><b>'+e(r[0])+'</b> '+e(r[1])+'</div>'}).join('')});
@@ -447,7 +478,11 @@ $('alt').addEventListener('change',function(ev){var i=ev.target.dataset.o,r=ev.t
  var x=pBy(r.dataset.k);if(!x)return;
  if(!shiftOpen()){ev.target.value=x.ord[+i].t;return}
  var v=ev.target.value.trim();if(v)x.ord[+i].t=v;else ev.target.value=x.ord[+i].t;aud('изменил назначение',x.n);savP()});
-var AP=ls('mis_ap',[]),recDate=null,recDoc=null,apE=null,apT='',SCL={'Записан':'var(--d)','Пришёл':'#2e8b57','Не явился':'#c0392b'};
+var AP=ls('mis_ap',[]),SH=ls('mis_sh',[]),recDate=null,recDoc=null,apE=null,apT='',SCL={'Записан':'var(--d)','Пришёл':'#2e8b57','Не явился':'#c0392b'};
+function slotsFor(on,d,dt){var out=[];SH.forEach(function(s){if(s.org!==on||s.doc.toLowerCase()!==d.toLowerCase()||s.date!==dt)return;
+ var f=s.from.split(':'),t2=s.to.split(':'),st=+s.step||30,a=+f[0]*60+ +f[1],b=+t2[0]*60+ +t2[1];
+ for(var m=a;m+st<=b&&out.length<200;m+=st)out.push(pad(Math.floor(m/60))+':'+pad(m%60))});
+ return out.sort()}
 function recInit(){if(!recDate)recDate=toIso(today());if(recDoc===null){var m=org&&org.st.filter(function(x){return x.t===S})[0];recDoc=m?m.p:'Врач'}}
 function docOpts(){var d=[];(org?org.st:[]).forEach(function(x){if(d.indexOf(x.p)<0)d.push(x.p)});AP.forEach(function(a){if(d.indexOf(a.doc)<0)d.push(a.doc)});return d.map(function(o){return'<option value="'+qa(o)+'">'}).join('')}
 function recView(){recInit();
@@ -457,18 +492,36 @@ function recView(){recInit();
  var rows=T.map(function(t){var a=L.filter(function(x){return x.time===t})[0];
   if(!a)return'<div class="sl"><span class="tm">'+t+'</span><span class="fr">Свободно</span><button class="bt2 g2" type="button" data-rv="book" data-t="'+t+'">Записать</button></div>';
   return'<div class="sl bk"><span class="tm">'+t+'</span><span style="flex:1;min-width:0"><b>'+e(a.name)+'</b><span class="sb">'+e(a.note)+'</span></span><span class="tg2" style="color:'+SCL[a.st]+'">'+a.st+'</span><button class="rm" type="button" data-rv="edit" data-id="'+a.id+'" aria-label="Изменить запись">✎</button><button class="rm" type="button" data-rv="del" data-id="'+a.id+'" aria-label="Отменить запись">×</button></div>'}).join('');
- return'<h3>Запись на приём</h3><div class="rv"><div class="rvc"><label>Дата<input type="date" data-rvf="date" value="'+recDate+'"></label><label>Врач<input data-rvf="doc" list="rdl" value="'+qa(recDoc)+'"><datalist id="rdl">'+docOpts()+'</datalist></label><span class="sb" style="padding-bottom:8px">Записано: '+L.length+'</span></div><div class="tw">'+rows+'</div></div>'}
+ var shs=SH.filter(function(s){return s.org===(org?org.n:'')}).sort(function(a,b){return(a.date+a.from)<(b.date+b.from)?-1:1});
+ var shrows=shs.map(function(s,i){var bk=AP.filter(function(a){return a.date===s.date&&(a.org||s.org)===s.org&&a.doc.toLowerCase()===s.doc.toLowerCase()}).length;
+  return'<div class="sl"><span class="tm">'+fromIso(s.date)+'</span><span style="flex:1;min-width:0"><b>'+e(s.doc)+'</b><span class="sb">'+s.from+'–'+s.to+' · шаг '+s.step+' мин · записей: '+bk+'</span></span><button class="rm" type="button" data-rv="shdel" data-i="'+i+'" aria-label="Удалить смену">×</button></div>'}).join('');
+ return'<h3>Запись на приём</h3><div class="rv"><div class="rvc"><label>Дата<input type="date" data-rvf="date" value="'+recDate+'"></label><label>Врач<input data-rvf="doc" list="rdl" value="'+qa(recDoc)+'"><datalist id="rdl">'+docOpts()+'</datalist></label><span class="sb" style="padding-bottom:8px">Записано: '+L.length+'</span></div>'+(shs.length?'<h3 style="margin-top:10px">Плановые смены</h3>'+shrows:'')+'<div style="margin:10px 0"><button class="bt2" type="button" data-rv="sh">+ Планировать смену</button></div><div class="tw">'+rows+'</div></div>'}
+function shDlg(){if(!canWork())return;var ds=[];(org?org.st:[]).forEach(function(x){if(x.p&&ds.indexOf(x.p)<0)ds.push(x.p)});
+ dlg('<h3>Планировать смену</h3><label for="shd">Врач (должность)</label><input id="shd" list="sdl" autocomplete="off" value="'+qa(recDoc)+'"><datalist id="sdl">'+ds.map(function(o){return'<option value="'+qa(o)+'">'}).join('')+'</datalist><label for="shdate">Дата</label><input id="shdate" type="date" min="'+toIso(today())+'" value="'+recDate+'"><div class="sf2"><div style="flex:1"><label for="shfrom">С</label><input id="shfrom" type="time" value="09:00"></div><div style="flex:1"><label for="shto">До</label><input id="shto" type="time" value="14:00"></div><div><label for="shstep">Шаг, мин</label><select id="shstep">'+[15,20,30,45,60].map(function(v){return'<option value="'+v+'"'+(v===30?' selected':'')+'>'+v+'</option>'}).join('')+'</select></div></div><div class="err" id="she"></div><div class="mf"><button class="bt2 g2" data-m="x" type="button">Отмена</button><button class="bt2" data-m="ssh" type="button">Сохранить</button></div>');$('shd').focus()}
+function saveSh(){if(!canWork())return;var d=$('shd').value.trim(),dt=$('shdate').value,f=$('shfrom').value,t2=$('shto').value,st=+$('shstep').value||30;
+ if(!d)return err('Укажите врача','she');
+ if(!(org.st.some(function(x){return x.p===d})))return err('Такой должности нет в штате','she');
+ if(!dt)return err('Укажите дату','she');
+ if(!f||!t2)return err('Укажите время начала и конца','she');
+ var fm=f.split(':'),tm=t2.split(':'),a=+fm[0]*60+ +fm[1],b=+tm[0]*60+ +tm[1];
+ if(!(b>a))return err('Конец смены должен быть позже начала','she');
+ if((b-a)/st>200)return err('Слишком много слотов — увеличьте шаг','she');
+ if(SH.some(function(s){return s.org===org.n&&s.doc.toLowerCase()===d.toLowerCase()&&s.date===dt&&s.from===f&&s.to===t2}))return err('Такая смена уже запланирована','she');
+ SH.push({id:String(Date.now())+Math.floor(Math.random()*1000),org:org.n,doc:d,date:dt,from:f,to:t2,step:st});
+ sv('mis_sh',SH);cdlg();recDate=dt;recDoc=d;$('alt').innerHTML=recView();aud('запланировал смену '+f+'–'+t2,d)}
 function apDlg(t,id){if(!canWork())return;apE=id||null;var a=id?AP.filter(function(x){return x.id===id})[0]:{time:t,name:'',note:'',st:'Записан'};
  dlg('<h3>'+(id?'Запись на приём':'Новая запись')+'</h3><label for="an">Пациент</label><input id="an" list="pln" autocomplete="off" placeholder="ФИО" value="'+qa(a.name)+'"><datalist id="pln">'+P.map(function(x){return'<option value="'+qa(x.n)+'">КВС '+x.k+'</option>'}).join('')+'</datalist><label for="atm">Время</label><input id="atm" type="time" step="900" value="'+a.time+'"><label for="ano">Причина обращения</label><input id="ano" autocomplete="off" value="'+qa(a.note)+'"><label for="ast">Статус</label><select id="ast">'+['Записан','Пришёл','Не явился'].map(function(o){return'<option'+(o===a.st?' selected':'')+'>'+o+'</option>'}).join('')+'</select><div class="err" id="ae"></div><div class="mf"><button class="bt2 g2" data-m="x" type="button">Отмена</button><button class="bt2" data-m="sap" type="button">Сохранить</button></div>');$('an').focus()}
 function saveAp(){var n=$('an').value.trim().replace(/\s+/g,' '),t=$('atm').value;
  if(!n)return err('Укажите пациента','ae');
  if(!t)return err('Укажите время','ae');
  if(AP.some(function(a){return a.id!==apE&&a.date===recDate&&a.doc.toLowerCase()===recDoc.toLowerCase()&&a.time===t}))return err('Это время уже занято','ae');
- var rec={id:apE||String(Date.now())+Math.floor(Math.random()*1000),date:recDate,doc:recDoc,time:t,name:n,note:$('ano').value.trim(),st:$('ast').value};
+ var rec={id:apE||String(Date.now())+Math.floor(Math.random()*1000),date:recDate,doc:recDoc,time:t,name:n,note:$('ano').value.trim(),st:$('ast').value,org:org?org.n:undefined};
  var i=AP.map(function(a){return a.id}).indexOf(apE);if(apE&&i>=0)AP[i]=rec;else AP.push(rec);
  sv('mis_ap',AP);cdlg();$('alt').innerHTML=recView();aud('записал на приём',n)}
 $('alt').addEventListener('click',function(ev){var t=ev.target.closest('[data-rv]');if(!t||!ev.target.closest('.rv'))return;var v=t.dataset.rv;if(!canWork())return;
- if(v==='book')apDlg(t.dataset.t);else if(v==='edit')apDlg('',t.dataset.id);
+ if(v==='book')apDlg(t.dataset.t);else if(v==='edit')apDlg('',t.dataset.id);else if(v==='sh')shDlg();
+ else if(v==='shdel'){var shs=SH.filter(function(s){return s.org===(org?org.n:'')}).sort(function(a,b){return(a.date+a.from)<(b.date+b.from)?-1:1});var s=shs[+t.dataset.i];if(!s)return;
+  ask('Удалить смену «'+e(s.doc)+'» на '+fromIso(s.date)+' ('+s.from+'–'+s.to+')? Уже сделанные записи пациентов сохранятся.',function(){SH=SH.filter(function(x){return x!==s});sv('mis_sh',SH);$('alt').innerHTML=recView()})}
  else if(v==='del'){var a=AP.filter(function(x){return x.id===t.dataset.id})[0];if(!a)return;
   ask('Отменить запись «'+e(a.name)+'» на '+a.time+'?',function(){aud('отменил запись на приём',a.name);AP=AP.filter(function(x){return x.id!==a.id});sv('mis_ap',AP);$('alt').innerHTML=recView()})}});
 $('alt').addEventListener('change',function(ev){var f=ev.target.dataset.rvf;if(!f)return;var v=ev.target.value.trim();
@@ -476,10 +529,10 @@ $('alt').addEventListener('change',function(ev){var f=ev.target.dataset.rvf;if(!
 $('r4').onclick=function(){openTab('Запись')};
 var WD=ls('mis_w',[]),wI=null;
 function noF(){return!$('fio').value&&!$('dg').value&&!$('a1').value&&!$('a2').value&&!$('sx').value&&!$('st').value&&!$('kv').value&&!$('my').checked&&!ws.length}
-function wardSel(cur){var w=['Без палаты'];WD.forEach(function(x){w.push(x.n)});if(cur&&w.indexOf(cur)<0)w.push(cur);
+function wardSel(cur){var w=['Без палаты'];WD.forEach(function(x){if(x&&x.n)w.push(x.n)});if(cur&&w.indexOf(cur)<0)w.push(cur);
  return w.map(function(o){var f=o!==cur&&wardFull(o);return'<option value="'+qa(o)+'"'+(o===cur?' selected':'')+(f?' disabled':'')+'>'+e(o)+(f?' — мест нет':'')+'</option>'}).join('')}
 function wardFull(n,ex){var w=WD.filter(function(x){return x.n===n})[0];return!!w&&P.filter(function(p){return p.g===n&&p!==ex}).length>=w.cap}
-function renderWd(){$('wd').innerHTML=WD.length?WD.map(function(w){return'<button type="button" data-w="'+qa(w.n)+'"'+(ws.indexOf(w.n)>=0?' class="on"':'')+'>'+e(w.n.replace(/^Палата\s*/,''))+'</button>'}).join(''):'<span class="sb">Палат пока нет</span>'}
+function renderWd(){$('wd').innerHTML=WD.length?WD.filter(function(w){return w&&w.n}).map(function(w){return'<button type="button" data-w="'+qa(w.n)+'"'+(ws.indexOf(w.n)>=0?' class="on"':'')+'>'+e(w.n.replace(/^Палата\s*/,''))+'</button>'}).join(''):'<span class="sb">Палат пока нет</span>'}
 function wardDlg(i){wI=i===undefined?null:i;var w=wI===null?{n:'',cap:4}:WD[wI];
  dlg('<h3>'+(wI===null?'Новая палата':'Палата')+'</h3><label for="wn">Название</label><input id="wn" autocomplete="off" placeholder="Например, Палата 201" value="'+qa(w.n)+'"><label for="wc">Количество коек</label><input id="wc" type="number" min="1" max="99" value="'+w.cap+'"><div class="err" id="we"></div><div class="mf"><button class="bt2 g2" data-m="x" type="button">Отмена</button><button class="bt2" data-m="sw" type="button">Сохранить</button></div>');$('wn').focus()}
 function saveWard(){if(!canWork())return;var n=$('wn').value.trim().replace(/\s+/g,' '),c=Math.floor(+$('wc').value);
@@ -494,7 +547,7 @@ function wardAct(a,i){var w=WD[i];if(!w)return;if(!canWork())return;
  if(a==='edit')return wardDlg(i);
  ask('Удалить «'+e(w.n)+'»? Пациенты из неё перейдут в «Без палаты».',function(){P.forEach(function(p){if(p.g===w.n)p.g='Без палаты'});ws=ws.filter(function(x){return x!==w.n});WD.splice(i,1);sv('mis_w',WD);savP();renderWd();draw();aud('удалил палату «'+w.n+'»')})}
 $('addw').onclick=function(){if(!canWork())return;wardDlg()};
-renderWd();
+try{renderWd()}catch(x){}
 var RAW=`A00|Холера
 A02.0|Сальмонеллёзный энтерит
 A03.9|Шигеллёз неуточнённый
@@ -1045,17 +1098,22 @@ function meApt(){var x=meFind()[0];if(!x)return meLogin();var sp=specs(),h='<div
  if(!meDate)meDate=toIso(today());
  if(meSpec===null||!sp[meSpec]){meSpec=null;h+='<p>Выберите специалиста</p>'+(sp.length?sp.map(function(s,i){return'<button class="tile" data-a="mespec" data-i="'+i+'"><b>'+e(s.p)+'</b><span class="sb">'+e(s.org)+'</span></button>'}).join(''):'<p>Специалистов пока нет.</p>')}
  else{var s=sp[meSpec],T=[],n=new Date(),nm=pad(n.getHours())+':'+pad(n.getMinutes());
-  for(var i=8;i<18;i++){T.push(pad(i)+':00');T.push(pad(i)+':30')}
-  T=T.filter(function(t){return!(meDate===toIso(today())&&t<=nm)&&!AP.some(function(a){return a.date===meDate&&a.doc.toLowerCase()===s.p.toLowerCase()&&a.time===t})});
-  h+='<p>'+e(s.p)+' · '+e(s.org)+'<button class="lk" type="button" data-a="mechg">сменить</button></p><label for="medate">Дата</label><input id="medate" type="date" min="'+toIso(today())+'" value="'+meDate+'"><label>Свободное время</label><div class="slg">'+(T.length?T.map(function(t){return'<button class="bt2 g2" type="button" data-a="meslot" data-t="'+t+'">'+t+'</button>'}).join(''):'<span class="sb">На эту дату свободного времени нет.</span>')+'</div>'}
+  T=slotsFor(s.org,s.p,meDate).filter(function(t){return!(meDate===toIso(today())&&t<=nm)&&!AP.some(function(a){return a.date===meDate&&a.doc.toLowerCase()===s.p.toLowerCase()&&a.time===t&&(a.org||s.org)===s.org})});
+  var sd=[];SH.forEach(function(q){if(q.org===s.org&&q.doc.toLowerCase()===s.p.toLowerCase()&&q.date>=toIso(today())&&sd.indexOf(q.date)<0)sd.push(q.date)});sd.sort();
+  h+='<p>'+e(s.p)+' · '+e(s.org)+'<button class="lk" type="button" data-a="mechg">сменить</button></p><label for="medate">Дата</label><input id="medate" type="date" min="'+toIso(today())+'" value="'+meDate+'">'
+  +(sd.length?'<div class="sb" style="margin-top:4px">Смены врача: '+sd.map(function(d){return'<button class="lk" type="button" data-a="meshdate" data-t="'+d+'">'+fromIso(d)+'</button> '}).join('')+'</div>':'')
+  +'<label>Свободное время</label><div class="slg">'+(T.length?T.map(function(t){return'<button class="bt2 g2" type="button" data-a="meslot" data-t="'+t+'">'+t+'</button>'}).join(''):'<span class="sb">На эту дату смен нет — врач не планировал приём.</span>')+'</div>'}
  var M=meMine(x);
  h+='</div><div class="card w" style="margin-top:12px"><h2>Мои записи</h2>'+(M.length?M.map(function(a){var up=a.date>=toIso(today())&&a.st==='Записан';return'<div class="ri" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="flex:1"><b>'+fromIso(a.date)+' '+a.time+'</b> · '+e(a.doc)+'<span class="sb">'+e(a.note)+'</span></span><span class="tg2" style="color:'+SCL[a.st]+'">'+a.st+'</span>'+(up?'<button class="bt2 g2" type="button" data-a="mecan" data-id="'+a.id+'">Отменить</button>':'')+'</div>'}).join(''):'<p>Записей пока нет.</p>')+'</div>';
  R(h,'meap')}
 function meSlot(t){var s=specs()[meSpec];if(!s)return;meT=t;
  dlg('<h3>Запись к врачу</h3><p>'+e(s.p)+' · '+e(s.org)+'<br>'+fromIso(meDate)+', '+t+'</p><label for="mer">Причина обращения</label><input id="mer" autocomplete="off"><div class="err" id="mee"></div><div class="mf"><button class="bt2 g2" data-m="x" type="button">Отмена</button><button class="bt2" data-m="sme" type="button">Записаться</button></div>');$('mer').focus()}
 function saveMe(){var x=meFind()[0],s=specs()[meSpec];if(!x||!s)return cdlg();
- if(AP.some(function(a){return a.date===meDate&&a.doc.toLowerCase()===s.p.toLowerCase()&&a.time===meT}))return err('Это время уже занято','mee');
- AP.push({id:String(Date.now())+Math.floor(Math.random()*1000),date:meDate,doc:s.p,time:meT,name:x.n,note:$('mer').value.trim(),st:'Записан',tg:nt(ME),k:x.k});
+ var n=new Date(),nm=pad(n.getHours())+':'+pad(n.getMinutes());
+ if(meDate===toIso(today())&&meT<=nm)return err('Это время уже прошло','mee');
+ if(slotsFor(s.org,s.p,meDate).indexOf(meT)<0)return err('Это время недоступно — смену могли изменить','mee');
+ if(AP.some(function(a){return a.date===meDate&&a.doc.toLowerCase()===s.p.toLowerCase()&&a.time===meT&&(a.org||s.org)===s.org}))return err('Это время уже занято','mee');
+ AP.push({id:String(Date.now())+Math.floor(Math.random()*1000),date:meDate,doc:s.p,time:meT,name:x.n,note:$('mer').value.trim(),st:'Записан',tg:nt(ME),k:x.k,org:s.org});
  sv('mis_ap',AP);cdlg();meApt()}
 function meCan(id){var a=AP.filter(function(x){return x.id===id})[0];if(!a)return;
  ask('Отменить запись на '+fromIso(a.date)+' '+a.time+'?',function(){AP=AP.filter(function(x){return x.id!==id});sv('mis_ap',AP);meApt()},'Отменить запись')}
@@ -1079,14 +1137,15 @@ function rqAct(id,ok){if(!isAdmin())return;var r=REQ.filter(function(x){return x
  sv('mis_req',REQ);sv('mis_nt',NT);reqView()}
 function mgmtView(){if(!isAdmin())return home();
  var rows=Object.keys(U).map(function(t){var b=BAN[t]?1:0;
-  return'<div class="ri"><div class="fg2"><div><small class="sb">Telegram</small>@'+e(t)+'</div><div><small class="sb">Почта</small>'+e(U[t]||'—')+'</div><div><small class="sb">Статус</small>'+(b?'<span style="color:#c0392b">Заблокирован</span>':'<span style="color:#2e8b57">Активен</span>')+'</div>'+(t===ADMIN?'':'<div><small class="sb">&nbsp;</small><button class="bt2'+(b?' g2':'')+'" type="button" data-a="'+(b?'unban':'ban')+'" data-t="'+e(t)+'">'+(b?'Разблокировать':'Заблокировать')+'</button> <button class="bt2 g2" type="button" data-a="udel" data-t="'+e(t)+'">Удалить</button></div>')+'</div></div>'}).join('');
- var bl=Object.keys(BAN).map(function(t){return'<div class="ri"><div class="fg2"><div><small class="sb">Telegram</small>@'+e(t)+'</div><div><small class="sb">С</small>'+e(BAN[t].dt||'—')+'</div><div><small class="sb">&nbsp;</small><button class="bt2 g2" type="button" data-a="unban" data-t="'+e(t)+'">Разблокировать</button></div></div></div>'}).join('');
+  return'<div class="ri"><div class="fg2"><div><small class="sb">Telegram</small>@'+e(t)+'</div><div><small class="sb">Почта</small>'+e(U[t]||'—')+'</div><div><small class="sb">Статус</small>'+(b?'<span style="color:#c0392b">Заблокирован</span>'+(BAN[t].rs?'<small class="sb" style="display:block">Причина: '+e(BAN[t].rs)+'</small>':''):'<span style="color:#2e8b57">Активен</span>')+'</div>'+(t===ADMIN?'':'<div><small class="sb">&nbsp;</small><button class="bt2'+(b?' g2':'')+'" type="button" data-a="'+(b?'unban':'ban')+'" data-t="'+e(t)+'">'+(b?'Разблокировать':'Заблокировать')+'</button> <button class="bt2 g2" type="button" data-a="udel" data-t="'+e(t)+'">Удалить</button></div>')+'</div></div>'}).join('');
+ var bl=Object.keys(BAN).map(function(t){return'<div class="ri"><div class="fg2"><div><small class="sb">Telegram</small>@'+e(t)+'</div><div><small class="sb">С</small>'+e(BAN[t].dt||'—')+'</div><div><small class="sb">Причина</small>'+e(BAN[t].rs||'не указана')+'</div><div><small class="sb">&nbsp;</small><button class="bt2 g2" type="button" data-a="unban" data-t="'+e(t)+'">Разблокировать</button></div></div></div>'}).join('');
  var orows=O.map(function(o,i){return'<div class="ri"><div class="fg2"><div><small class="sb">Организация</small>'+e(o.n)+'</div><div><small class="sb">Владелец</small>@'+e(o.ow)+'</div><div><small class="sb">Канал</small>'+e(o.ch||'—')+'</div><div><small class="sb">Сотрудников</small>'+(o.st?o.st.length:0)+'</div><div><small class="sb">&nbsp;</small><button class="bt2 g2" type="button" data-a="odel" data-i="'+i+'">Удалить</button></div></div></div>'}).join('');
- R('<div class="card w"><h2>Управление</h2><p>Блокировка работает даже для тех, кто ещё не регистрировался: такой Telegram не сможет ни войти, ни зарегистрироваться.</p><label for="bk2">Telegram пользователь</label><input id="bk2" placeholder="@username" autocapitalize="off" autocomplete="off"><div class="err" id="be2"></div><button class="bt" data-a="ban">Заблокировать</button></div>'+(rows?'<div class="card w" style="margin-top:12px"><h2>Аккаунты ('+Object.keys(U).length+')</h2>'+rows+'</div>':'')+(orows?'<div class="card w" style="margin-top:12px"><h2>Организации ('+O.length+')</h2>'+orows+'</div>':'')+(bl?'<div class="card w" style="margin-top:12px"><h2>Чёрный список ('+Object.keys(BAN).length+')</h2>'+bl+'</div>':''),'mgmt')}
+ R('<div class="card w"><h2>Управление</h2><p>Блокировка работает даже для тех, кто ещё не регистрировался: такой Telegram не сможет ни войти, ни зарегистрироваться.</p><label for="bk2">Telegram пользователь</label><input id="bk2" placeholder="@username" autocapitalize="off" autocomplete="off"><label for="bk2r">Причина (необязательно)</label><input id="bk2r" placeholder="Например: нарушение правил" maxlength="200" autocomplete="off"><div class="err" id="be2"></div><button class="bt" data-a="ban">Заблокировать</button></div>'+(rows?'<div class="card w" style="margin-top:12px"><h2>Аккаунты ('+Object.keys(U).length+')</h2>'+rows+'</div>':'')+(orows?'<div class="card w" style="margin-top:12px"><h2>Организации ('+O.length+')</h2>'+orows+'</div>':'')+(bl?'<div class="card w" style="margin-top:12px"><h2>Чёрный список ('+Object.keys(BAN).length+')</h2>'+bl+'</div>':''),'mgmt')}
 function banAcc(){if(!isAdmin())return;var t=$('bk2').value.trim().replace(/^@/,'').toLowerCase();
  if(!TG.test(t))return err('Telegram: 5–32 символа, латиница, цифры и _','be2');
  if(t===ADMIN)return err('Администратора заблокировать нельзя','be2');
- BAN[t]={dt:today()};sv('mis_ban',BAN);mgmtView()}
+ var rs=$('bk2r')?$('bk2r').value.trim().slice(0,200):'';
+ BAN[t]={dt:today(),rs:rs||undefined};sv('mis_ban',BAN);$('bk2').value='';if($('bk2r'))$('bk2r').value='';mgmtView()}
 function unbanAcc(t){if(!isAdmin())return;delete BAN[(t||'').toLowerCase()];sv('mis_ban',BAN);mgmtView()}
 function odelOrg(i){if(!isAdmin())return;var o=O[i];if(!o)return;
  O.splice(i,1);sv('mis_o',O);
@@ -1101,7 +1160,19 @@ function ntView(){var L=NT.filter(function(n){return n.to===S}),fresh={};
  R('<div class="card w"><h2>Уведомления</h2>'+(L.length?L.map(function(n){return'<div class="ri">'+(fresh[n.id]?'<b>':'')+e(n.text)+(fresh[n.id]?'</b>':'')+'<span class="sb">'+n.date+(fresh[n.id]?' · новое':'')+'</span></div>'}).join(''):'<p>Уведомлений нет.</p>')+'</div>','nt')}
 scr.addEventListener('keydown',function(ev){if(ev.key!=='Enter'||ev.target.tagName!=='INPUT')return;var m={lt:'lcode',rt:'code',bk2:'ban',mt:'mego',rn:'mk',rc2:'mk'}[ev.target.id];if(m)scr.onclick({target:{closest:function(){return{dataset:{a:m}}}}})});
 $('addp').onclick=addPDlg;
-setInterval(function(){if(supaCfg())cloudPull()},15000);
+setInterval(function(){if(supaCfg())cloudPull(function(ch){if(ch)autoRedraw()})},15000);
 addEventListener('beforeunload',cloudPush);
-cloudPull(function(){home();draw()});
+function recoverPush(){if(!supaCfg())return;var d=ls('mis_dirty',{}),ks=Object.keys(d).filter(function(k){return SYNCK.indexOf(k)>=0});if(!ks.length)return;
+ fetch(SUPA_URL+'/rest/v1/state?select=id,data',{headers:{apikey:SUPA_KEY}}).then(function(r){return r.json()}).then(function(rows){
+  var cts={},ad=0;if(Array.isArray(rows))rows.forEach(function(row){if(row.id==='mis_ts'&&row.data&&typeof row.data==='object')cts=row.data});
+  var tp=[];
+  ks.forEach(function(k){var row=null;if(Array.isArray(rows))rows.forEach(function(r){if(r.id===k)row=r});
+   var ct=cts[k]||0,lt=tmap[k]||0;
+   if(row&&row.data!==null&&ct>lt){try{localStorage.setItem(k,JSON.stringify(row.data))}catch(x){}tmap[k]=ct;persistTs();dClear(k);ad++}
+   else tp.push(k)});
+  if(ad)reloadState();
+  if(tp.length){tp.forEach(function(k){pushPend[k]=1});cloudPush()}
+ }).catch(function(){ks.forEach(function(k){pushPend[k]=1});cloudPush()})}
+recoverPush();
+cloudPull(function(){try{home();draw()}catch(x){}});
 </script></body></html>
