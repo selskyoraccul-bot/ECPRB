@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ЕЦПРБ</title>
+<title>АРМ врача стационара</title>
 <style>
 :root{color-scheme:light;--bg:#fff;--pn:#f5f7f9;--tx:#2b3640;--mu:#7b8894;--ln:#e1e6ea;--gr:#eceff1;--d:#1a73c9;--m:#2196f3;--sel:#e3f0fc;--ch:#f4f6f8;--wn:#fbe6a6;--wt:#6d5300;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box}html,body{height:100%}
@@ -200,8 +200,6 @@ function view(n){if(n.indexOf("p:")===0)return cardView(n.slice(2));if(n==="На
  return '<h3>'+e(n)+'</h3>'+(v?'<div class="tw"><table><thead><tr>'+v[0].map(function(c){return'<th>'+c+'</th>'}).join("")+'</tr></thead><tbody>'+v[1].map(function(r){return'<tr>'+r.map(function(c){return'<td>'+e(c)+'</td>'}).join("")+'</tr>'}).join("")+'</tbody></table></div>':'<div class="emp">В разделе пока нет записей за выбранный период.</div>')}
 function activate(t){
  document.querySelectorAll("#tb b").forEach(function(b){b.classList.toggle("on",b.dataset.t===t)});
-
-строка 202
  $("app").classList.toggle("alt",t!=="main");
  if(t!=="main")$("alt").innerHTML=view(t)}
 function openTab(n,l){
