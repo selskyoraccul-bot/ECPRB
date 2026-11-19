@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>АРМ врача стационара</title>
+<title>ЕЦПРБ</title>
 <style>
 :root{color-scheme:light;--bg:#fff;--pn:#f5f7f9;--tx:#2b3640;--mu:#7b8894;--ln:#e1e6ea;--gr:#eceff1;--d:#1a73c9;--m:#2196f3;--sel:#e3f0fc;--ch:#f4f6f8;--wn:#fbe6a6;--wt:#6d5300;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box}html,body{height:100%}
@@ -200,6 +200,8 @@ function view(n){if(n.indexOf("p:")===0)return cardView(n.slice(2));if(n==="На
  return '<h3>'+e(n)+'</h3>'+(v?'<div class="tw"><table><thead><tr>'+v[0].map(function(c){return'<th>'+c+'</th>'}).join("")+'</tr></thead><tbody>'+v[1].map(function(r){return'<tr>'+r.map(function(c){return'<td>'+e(c)+'</td>'}).join("")+'</tr>'}).join("")+'</tbody></table></div>':'<div class="emp">В разделе пока нет записей за выбранный период.</div>')}
 function activate(t){
  document.querySelectorAll("#tb b").forEach(function(b){b.classList.toggle("on",b.dataset.t===t)});
+
+строка 202
  $("app").classList.toggle("alt",t!=="main");
  if(t!=="main")$("alt").innerHTML=view(t)}
 function openTab(n,l){
@@ -214,7 +216,7 @@ $("r2").onclick=function(){openTab("Журнал назначений")};
 $("r3").onclick=function(){openTab("Отчёты")};
 
 var SUPA_URL='https://bcmnktypnnnkivqoabuv.supabase.co',SUPA_KEY='sb_publishable_T1id5uMj1NpTE-ZyHjgLSg_xEW_jjpT';
-var SYNCK=['mis_u','mis_o','mis_p2','mis_aud','mis_v','mis_ap','mis_sh','mis_w','mis_mkb','mis_me','mis_req','mis_nt','mis_ban'],pushT=null,pushPend={},pushFly={},tmap=ls('mis_ts',{});
+var SYNCK=['mis_u','mis_o','mis_p2','mis_aud','mis_v','mis_ap','mis_sh','mis_w','mis_mkb','mis_me','mis_req','mis_nt','mis_ban','mis_inv'],pushT=null,pushPend={},pushFly={},tmap=ls('mis_ts',{});
 function supaCfg(){return SUPA_URL&&SUPA_KEY}
 function ls(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(x){return d}}
 function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(x){}
@@ -230,6 +232,9 @@ function cloudPush(){if(!supaCfg())return;
  fetch(SUPA_URL+'/rest/v1/state?on_conflict=id',{method:'POST',headers:{apikey:SUPA_KEY,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},body:JSON.stringify(body)}).then(function(){ks.forEach(function(k){delete pushFly[k];if(!pushPend[k])dClear(k)})}).catch(function(){
   ks.forEach(function(k){delete pushFly[k];pushPend[k]=1});
   if(pushT)clearTimeout(pushT);pushT=setTimeout(cloudPush,3000)})}
+function invLink(code){return location.origin+'/?inv='+code}
+function mkInv(tg,org,pos){var c=String(Math.floor(100000+Math.random()*900000));INV[c]={t:tg,o:org,p:pos||'',dt:today()};sv('mis_inv',INV);return c}
+function invApply(code){var inv=INV[code];if(!inv)return err('Инвайт-ссылка недействительна или уже использована');var t=inv.t.toLowerCase();if(!TG.test(t))return err('В ссылке указан некорректный Telegram');if(!U[t]){U[t]=inv.m||'';sv('mis_u',U)}S=t;sv('mis_s',S);if(org){var st=org.st.filter(function(x){return x.t===t})[0];if(!st){org.st.push({t:t,p:inv.p||'Врач'});sv('mis_o',O)}}delete INV[code];sv('mis_inv',INV);location.href=location.origin+'/';cloudPull(orgs)}
 function cloudPull(cb){if(!supaCfg()){if(cb)cb();return}
  fetch(SUPA_URL+'/rest/v1/state?select=id,data',{headers:{apikey:SUPA_KEY}}).then(function(r){return r.json()}).then(function(rows){
   var ch=false;
@@ -248,7 +253,7 @@ function cloudPull(cb){if(!supaCfg()){if(cb)cb();return}
     if(ct>lt){tmap[row.id]=ct;persistTs()}});
   }
   reloadState();if(cb)cb(ch)}).catch(function(){if(cb)cb()})}
-function reloadState(){U=ls('mis_u',U);O=ls('mis_o',O);P=ls('mis_p2',P);AUD=ls('mis_aud',AUD);JV=ls('mis_v',JV);AP=ls('mis_ap',AP);SH=ls('mis_sh',SH);WD=ls('mis_w',WD);MKB=ls('mis_mkb',null)||MKB;ME=ls('mis_me',ME);REQ=ls('mis_req',REQ);NT=ls('mis_nt',NT);BAN=ls('mis_ban',BAN);
+function reloadState(){U=ls('mis_u',U);O=ls('mis_o',O);P=ls('mis_p2',P);AUD=ls('mis_aud',AUD);JV=ls('mis_v',JV);AP=ls('mis_ap',AP);SH=ls('mis_sh',SH);WD=ls('mis_w',WD);MKB=ls('mis_mkb',null)||MKB;ME=ls('mis_me',ME);REQ=ls('mis_req',REQ);NT=ls('mis_nt',NT);BAN=ls('mis_ban',BAN);INV=ls('mis_inv',{});
  if(org){var fo=O.filter(function(o){return o.n===org.n&&o.ow===org.ow})[0];if(fo)org=fo}}
 var curAct='home';
 function autoRedraw(){
@@ -259,7 +264,7 @@ function autoRedraw(){
   if(!t||t==='main')draw();else{try{$("alt").innerHTML=view(t)}catch(x){}}}
  else{var f={home:home,orgs:orgs,mgmt:mgmtView,req:reqView,nt:ntView,login:login,reg:reg}[curAct];if(f){try{f()}catch(x){}}}
  window.scrollTo(0,y);if(sc)sc.scrollTop=st}
-var U=ls('mis_u',{}),O=ls('mis_o',[]),S=ls('mis_s',null),org=null,code=null,pend=null,scr=$('scr');
+var U=ls('mis_u',{}),O=ls('mis_o',[]),S=ls('mis_s',null),org=null,code=null,pend=null,scr=$('scr'),INV=ls('mis_inv',{});
 var TG=/^[A-Za-z0-9_]{5,32}$/;
 var DEF_BOT='9133038484:AAHBlPvSnqMX0LnNmSWdO11VB4T3LvtFKeU';
 var BOT=DEF_BOT,CHATS=ls('mis_chat',{}),pollT=null,reqSeq=0,curNonce=null,curBotName=null;
@@ -339,11 +344,12 @@ function saveOrg(){if(org.ow==='demo')sv('mis_demo',org);else sv('mis_o',O)}
 function setTl(){var m=org.st.filter(function(x){return x.t===S})[0];$('tl').textContent='РБ.МИС / '+org.n+' / '+org.ty+' / '+(m?m.p:'')}
 function setView(){
  var pos=org.ty.indexOf('Учеб')===0?['Учитель','Классный руководитель','Завуч','Администратор']:['Врач-терапевт','Врач-хирург','Медсестра','Администратор'];
- return'<h3>Настройки организации</h3><div class="tg" style="margin:0 0 14px"><b>Смена</b><p class="sb" style="margin:4px 0 8px">Сотрудники могут работать только при открытой смене. Сейчас смена: '+(org.shift?'<b style="color:#2e8b57">открыта</b>':'<b style="color:#c0392b">закрыта</b>')+'</p><button class="bt2'+(org.shift?' g2':'')+'" data-s="shift" type="button">'+(org.shift?'Закрыть смену':'Открыть смену')+'</button></div><div class="tw"><div class="fg" style="margin-bottom:14px"><label>Название<input data-og="n" value="'+qa(org.n)+'"></label><label>Тип<select data-og="ty">'+['Медицинское учреждение','Учебное учреждение'].map(function(o){return'<option'+(o===org.ty?' selected':'')+'>'+o+'</option>'}).join('')+'</select></label><label>Telegram-канал<input data-og="ch" value="'+qa(org.ch)+'"></label></div><table><thead><tr><th>Telegram</th><th>Должность</th><th></th></tr></thead><tbody>'+org.st.map(function(s,i){return'<tr><td>@'+e(s.t)+'</td><td><input class="oi" data-og="p" data-i="'+i+'" list="pl" value="'+qa(s.p)+'" aria-label="Должность"></td><td>'+(s.t===org.ow?'':'<button class="bt g dl" data-s="del" data-i="'+i+'">Удалить</button>')+'</td></tr>'}).join('')+'</tbody></table><div class="sf"><input id="at" placeholder="@telegram сотрудника" autocapitalize="off"><input id="ap" list="pl" placeholder="Должность"><datalist id="pl">'+pos.map(function(p){return'<option value="'+p+'">'}).join('')+'</datalist><button class="bt dl" style="padding:8px 14px" data-s="add">Добавить</button></div><div class="err" id="se"></div><h4 style="margin:22px 0 6px;font-weight:500">Справочник МКБ-10</h4><p class="sb">Сейчас кодов: '+MKB.length+'. Можно загрузить полный справочник: CSV (код;название) или JSON.</p><div class="sf"><input id="mf" type="file" accept=".csv,.txt,.json" style="border:0;padding:0"><button class="bt2" type="button" data-s="mkb">Загрузить</button><button class="bt2 g2" type="button" data-s="mkbr">Сбросить</button></div><div class="err" id="me"></div></div>'}
+ return'<h3>Настройки организации</h3><div class="tg" style="margin:0 0 14px"><b>Смена</b><p class="sb" style="margin:4px 0 8px">Сотрудники могут работать только при открытой смене. Сейчас смена: '+(org.shift?'<b style="color:#2e8b57">открыта</b>':'<b style="color:#c0392b">закрыта</b>')+'</p><button class="bt2'+(org.shift?' g2':'')+'" data-s="shift" type="button">'+(org.shift?'Закрыть смену':'Открыть смену')+'</button></div><div class="tw"><div class="fg" style="margin-bottom:14px"><label>Название<input data-og="n" value="'+qa(org.n)+'"></label><label>Тип<select data-og="ty">'+['Медицинское учреждение','Учебное учреждение'].map(function(o){return'<option'+(o===org.ty?' selected':'')+'>'+o+'</option>'}).join('')+'</select></label><label>Telegram-канал<input data-og="ch" value="'+qa(org.ch)+'"></label></div><table><thead><tr><th>Telegram</th><th>Должность</th><th></th></tr></thead><tbody>'+org.st.map(function(s,i){return'<tr><td>@'+e(s.t)+'</td><td><input class="oi" data-og="p" data-i="'+i+'" list="pl" value="'+qa(s.p)+'" aria-label="Должность"></td><td>'+(s.t===org.ow?'':'<button class="bt g dl" data-s="del" data-i="'+i+'">Удалить</button>')+'</td></tr>'}).join('')+'</tbody></table><div class="sf"><input id="at" placeholder="@telegram сотрудника" autocapitalize="off"><input id="ap" list="pl" placeholder="Должность"><datalist id="pl">'+pos.map(function(p){return'<option value="'+p+'">'}).join('')+'</datalist><button class="bt dl" style="padding:8px 14px" data-s="add">Добавить</button><button class="bt2" type="button" data-s="inv">Пригласить сотрудника</button></div><div class="err" id="se"></div><h4 style="margin:22px 0 6px;font-weight:500">Справочник МКБ-10</h4><p class="sb">Сейчас кодов: '+MKB.length+'. Можно загрузить полный справочник: CSV (код;название) или JSON.</p><div class="sf"><input id="mf" type="file" accept=".csv,.txt,.json" style="border:0;padding:0"><button class="bt2" type="button" data-s="mkb">Загрузить</button><button class="bt2 g2" type="button" data-s="mkbr">Сбросить</button></div><div class="err" id="me"></div></div>'}
 $('alt').onclick=function(ev){
  var a=ev.target.dataset.s;if(!a)return;
  if(a==='mkb')return impMkb();if(a==='mkbr'){MKB=parseMkb(RAW);try{localStorage.removeItem('mis_mkb')}catch(x){}$('alt').innerHTML=setView();return}
  if(a==='shift'){org.shift=!org.shift;saveOrg();syncShift();$('alt').innerHTML=setView();return}
+ if(a==='inv'){var tg=$('at').value.trim().replace(/^@/,'').toLowerCase();if(!TG.test(tg))return err('Укажите корректный Telegram','se');var c=mkInv(tg,org.n,$('ap').value.trim());var box=$('se');box.innerHTML='<div class="tg"><b>Инвайт-ссылка</b><br>Пришлите эту ссылку сотруднику: <a href="https://t.me/'+curBotName+'?start=inv_'+c+'" target="_blank" rel="noopener">https://t.me/'+curBotName+'?start=inv_'+c+'</a></div>';return}
  if(a==='del'){org.st.splice(+ev.target.dataset.i,1)}
  else{var t=$('at').value.trim().replace(/^@/,'').toLowerCase(),p=$('ap').value.trim();
   if(!TG.test(t))return err('Telegram: 5–32 символа, латиница, цифры и _','se');
@@ -1173,4 +1179,5 @@ function recoverPush(){if(!supaCfg())return;var d=ls('mis_dirty',{}),ks=Object.k
  }).catch(function(){ks.forEach(function(k){pushPend[k]=1});cloudPush()})}
 recoverPush();
 cloudPull(function(){try{home();draw()}catch(x){}});
+(function(){var m=location.search.match(/[?&]inv=([^&]+)/);if(m){invApply(m[1]);return}var m2=location.search.match(/[?&]start=([^&]+)/);if(m2&&m2[1].indexOf('inv_')===0)invApply(m2[1].slice(4))})();
 </script></body></html>
