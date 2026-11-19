@@ -262,30 +262,27 @@ function autoRedraw(){
 var U=ls('mis_u',{}),O=ls('mis_o',[]),S=ls('mis_s',null),org=null,code=null,pend=null,scr=$('scr');
 var TG=/^[A-Za-z0-9_]{5,32}$/;
 var DEF_BOT='9133038484:AAHBlPvSnqMX0LnNmSWdO11VB4T3LvtFKeU';
-var BOT=DEF_BOT,CHATS=ls('mis_chat',{}),pollT=null,reqSeq=0;
+var BOT=DEF_BOT,CHATS=ls('mis_chat',{}),pollT=null,reqSeq=0,curNonce=null,curBotName=null;
 function tgApi(m,p,tok){var q='';if(p)q='?'+Object.keys(p).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(p[k])}).join('&');
  var u='https://api.telegram.org/bot'+(tok||BOT)+'/'+m+q;
- return fetch(SUPA_URL.replace(/\/+$/,'')+'/functions/v1/tg/'+m+q,{headers:{apikey:SUPA_KEY}}).then(function(r){if(!r.ok)throw 0;return r.json()}).catch(function(){return fetch(u).then(function(r){return r.json()})})}
-function showCode(msg){var rc=$('rc');if(!rc)return;
- rc.innerHTML='<div class="tg"><b>Telegram</b><br>'+e(msg)+'</div><label for="rk">Код из Telegram</label><input id="rk" inputmode="numeric" maxlength="5" autocomplete="one-time-code"><button class="bt" data-a="ok">Подтвердить</button>'}
+ return new Promise(function(res,rej){var n=0,e=0;function attempt(promise,tag){promise.then(function(r){if(n)return;if(r.ok){n=1;res(r.json())}else{e++;if(e===2)rej(0)}},function(){e++;if(e===2)rej(0)})}attempt(fetch(u),'direct');attempt(fetch(SUPA_URL.replace(/\/+$/,'')+'/functions/v1/tg/'+m+q,{headers:{apikey:SUPA_KEY}}),'relay')})}
 function botErr(m){var rc=$('rc');if(!rc)return;
  rc.innerHTML='<div class="tg"><b>Telegram</b><br>'+e(m)+'</div>'}
 function botSend(t,chatId){tgApi('sendMessage',{chat_id:chatId,text:'РБ.МИС · код подтверждения: '+code}).then(function(r){
- if(r&&r.ok)return showCode('Код отправлен в Telegram — проверьте сообщения от бота.');
+ if(r&&r.ok){var box=$('rc');if(box)box.innerHTML='<div class="tg"><b>Telegram</b><br>Код отправлен в Telegram — проверьте сообщения от бота @'+e(curBotName)+'.</div>';return}
  delete CHATS[t.toLowerCase()];sv('mis_chat',CHATS);botRequest(t)}).catch(function(x){delete CHATS[t.toLowerCase()];sv('mis_chat',CHATS);botRequest(t)})}
 function botRequest(t){var box=$('rc');if(!box)return;var rid=++reqSeq;
  if(pollT){clearInterval(pollT);pollT=null}
  tgApi('getMe',null,BOT).then(function(g){
   if(rid!==reqSeq)return;
   if(!g||!g.ok)return botErr('Не удалось связаться с Telegram. Нажмите «Получить код» ещё раз.');
-  var chat=CHATS[t.toLowerCase()];
-  if(chat)return botSend(t,chat);
-  var nonce=String(Math.floor(100000+Math.random()*900000));
-  box.innerHTML='<div class="tg"><b>Telegram</b><br>Нажмите кнопку — бот пришлёт код в чат через пару секунд. Страницу не перезагружайте.<br><a class="bt" style="display:block;text-align:center;text-decoration:none" href="https://t.me/'+e(g.result.username)+'?start='+nonce+'" target="_blank" rel="noopener">Открыть бота и получить код</a><small style="display:block;margin-top:6px">Не сработало? Отправьте боту вручную: /start '+nonce+'</small></div>';
-  var chk=function(){if(rid!==reqSeq)return;tgApi('getUpdates',{timeout:0}).then(function(r){if(rid!==reqSeq)return;if(!r||!r.ok)return;(r.result||[]).forEach(function(u){var m=u.message||u.edited_message;if(m&&m.text&&new RegExp('(?:^|[^0-9])'+nonce+'(?:[^0-9]|$)').test(m.text)){reqSeq++;clearInterval(pollT);pollT=null;
+  curBotName=g.result.username;
+  curNonce=String(Math.floor(100000+Math.random()*900000));
+  box.innerHTML='<div class="tg"><b>Telegram</b><br>Нажмите кнопку — бот пришлёт код в чат через пару секунд. Страницу не перезагружайте.<br><a class="bt" style="display:block;text-align:center;text-decoration:none" href="https://t.me/'+e(curBotName)+'?start='+curNonce+'" target="_blank" rel="noopener">Открыть бота и получить код</a><small style="display:block;margin-top:6px">Не сработало? Отправьте боту вручную: /start '+curNonce+'</small></div>';
+  var chk=function(){if(rid!==reqSeq)return;tgApi('getUpdates',{timeout:0}).then(function(r){if(rid!==reqSeq)return;if(!r||!r.ok)return;(r.result||[]).forEach(function(u){var m=u.message||u.edited_message;if(m&&m.text&&new RegExp('(?:^|[^0-9])'+curNonce+'(?:[^0-9]|$)').test(m.text)){reqSeq++;clearInterval(pollT);pollT=null;
    var mu=((m.chat.username||m.from.username||'')+'').toLowerCase();
    if(mu!==t){box.innerHTML='<div class="tg"><b>Telegram</b><br>'+(mu?'Вы нажали кнопку из аккаунта <b>@'+e(mu)+'</b>, а в поле указали <b>@'+e(t)+'</b>. Введите свой настоящий @username и получите код заново.':'В вашем Telegram не указан @username — задайте его в настройках Telegram (Настройки → Имя пользователя) и попробуйте снова.')+'</div>';return}
-   CHATS[t.toLowerCase()]=m.chat.id;sv('mis_chat',CHATS);botSend(t,m.chat.id)}})}).catch(function(){})};
+   CHATS[t.toLowerCase()]=m.chat.id;sv('mis_chat',CHATS);U[pend.t]=pend.m;sv('mis_u',U);S=pend.t;sv('mis_s',S);code=null;pend=null;cloudPull(orgs)}})}).catch(function(){})};
   chk();pollT=setInterval(chk,2500)}).catch(function(x){if(rid===reqSeq)botErr('Не удалось связаться с Telegram. Нажмите «Получить код» ещё раз.')})}
 function R(h,act){curAct=act||'';if(pollT){clearInterval(pollT);pollT=null}
  if(S&&S!==ADMIN&&(BAN[S.toLowerCase()]||!U[S])){var brs=BAN[S.toLowerCase()]&&BAN[S.toLowerCase()].rs;S=null;sv('mis_s',null);org=null;h='<div class="card"><h2>Доступ закрыт</h2><p>Аккаунт заблокирован или удалён администратором.</p>'+(brs?'<p class="sb">Причина: '+e(brs)+'</p>':'')+'<button class="bt" data-a="home">На главную</button></div>';act=''}
@@ -311,14 +308,12 @@ function loginCode(){
 function getCode(){
  var t=$('rt').value.trim().replace(/^@/,'').toLowerCase(),m=$('rm').value.trim().toLowerCase();
  if(!TG.test(t))return err('Telegram: 5–32 символа, латиница, цифры и _');
+ if(U[t])return err('Этот Telegram уже зарегистрирован. Войти во вкладку «Вход»');
  if(!/^[a-z0-9._+-]+@gmail\.com$/.test(m))return err('Нужна почта Gmail (name@gmail.com)');
  if(U[t]&&U[t]!==m)return err('Для этого Telegram указана другая почта');
  if(BAN[t])return err('Этот Telegram заблокирован администратором');
  code=String(Math.floor(10000+Math.random()*90000));pend={t:t,m:m};err('');
  return botRequest(t)}
-function okCode(){
- if(!$('rk')||$('rk').value.trim()!==code)return err('Неверный код');
- U[pend.t]=pend.m;sv('mis_u',U);S=pend.t;sv('mis_s',S);code=null;cloudPull(orgs)}
 function orgs(){
  var my=[];O.forEach(function(o,i){if(o.sys&&o.sys!=='РБ.МИС')return;var m=o.st.filter(function(x){return(x.t||'').toLowerCase()===S})[0];if(m)my.push([o,i,m])});
  var mine=REQ.filter(function(r){return r.from===S}).reverse(),un=unread();
@@ -360,7 +355,7 @@ $('alt').addEventListener('change',function(ev){var g=ev.target.dataset.og;if(!g
  if(g==='p'){if(v)org.st[+ev.target.dataset.i].p=v}else if(g==='n'){if(v)org.n=v}else org[g]=v;
  saveOrg();setTl();$('alt').innerHTML=setView()});
 scr.onclick=function(ev){var b=ev.target.closest('[data-a]');if(!b)return;var a=b.dataset.a;
- if(a==='mis')(S?cloudPull(orgs):login());else if(a==='req')cloudPull(reqView);else if(a==='nt')cloudPull(ntView);else if(a==='rqok')rqAct(b.dataset.id,1);else if(a==='rqno')rqAct(b.dataset.id,0);else if(a==='home')home();else if(a==='me')(ME&&meFind().length?meInfo():meLogin());else if(a==='melogin')meLogin();else if(a==='mego')meGo();else if(a==='meap')meApt();else if(a==='meout')meOut();else if(a==='mespec'){meSpec=+b.dataset.i;meApt()}else if(a==='mechg'){meSpec=null;meApt()}else if(a==='meslot')meSlot(b.dataset.t);else if(a==='mecan')meCan(b.dataset.id);else if(a==='meshdate'){meDate=b.dataset.t;meApt()}else if(a==='login')login();else if(a==='reg')reg();else if(a==='lcode')loginCode();else if(a==='code')getCode();else if(a==='ok')okCode();else if(a==='gmail'){var em=$('rm');if(em){var v=em.value,at=v.indexOf('@');em.value=(at<0?v:v.slice(0,at))+'@gmail.com';em.focus()}}
+ if(a==='mis')(S?cloudPull(orgs):login());else if(a==='req')cloudPull(reqView);else if(a==='nt')cloudPull(ntView);else if(a==='rqok')rqAct(b.dataset.id,1);else if(a==='rqno')rqAct(b.dataset.id,0);else if(a==='home')home();else if(a==='me'){var f=S?meFindBy(S):[];if(!f.length&&ME)f=meFindBy(ME);if(f.length){if(f.length>1){ME=S||ME;mePick(f);return}ME=S||ME;meK=f[0].k;sv('mis_me',ME);meInfo()}else meLogin()}else if(a==='melogin')meLogin();else if(a==='mego')meGo();else if(a==='meap')meApt();else if(a==='meout')meOut();else if(a==='mespec'){meSpec=+b.dataset.i;meApt()}else if(a==='mechg'){meSpec=null;meApt()}else if(a==='meslot')meSlot(b.dataset.t);else if(a==='mecan')meCan(b.dataset.id);else if(a==='meshdate'){meDate=b.dataset.t;meApt();}else if(a==='mepick'){meK=b.dataset.k;sv('mis_me',ME);meInfo();}else if(a==='login')login();else if(a==='reg')reg();else if(a==='lcode')loginCode();else if(a==='code')getCode();else if(a==='gmail'){var em=$('rm');if(em){var v=em.value,at=v.indexOf('@');em.value=(at<0?v:v.slice(0,at))+'@gmail.com';em.focus()}}
  else if(a==='mgmt')cloudPull(mgmtView);else if(a==='ban')banAcc();else if(a==='unban')unbanAcc(b.dataset.t);else if(a==='odel')odelOrg(+b.dataset.i);else if(a==='udel')udelAcc(b.dataset.t);
  else if(a==='enter')cloudPull(function(){enter(+b.dataset.i)});else if(a==='newo')newOrg();else if(a==='mk')mkOrg();else if(a==='orgs')orgs();
  else if(a==='out'){S=null;sv('mis_s',null);home()}};
@@ -1074,9 +1069,10 @@ function impMkb(){var f=$('mf').files[0];if(!f)return err('Выберите фа
   try{localStorage.setItem('mis_mkb',JSON.stringify(MKB))}catch(x){}
   $('alt').innerHTML=setView();err('Загружено кодов: '+L.length,'me')};
  r.readAsText(f)}
-var ME=ls('mis_me',null),meSpec=null,meDate=null,meT='';
+var ME=ls('mis_me',null),meSpec=null,meDate=null,meT='',meK=null;
 function nt(t){return String(t||'').trim().replace(/^@/,'').toLowerCase()}
-function meFind(){return ME?P.filter(function(x){return nt(x.info&&x.info.tg)===nt(ME)}):[]}
+function meFind(){var m=ME?P.filter(function(x){return nt(x.info&&x.info.tg)===nt(ME)}):[];if(meK)m=m.filter(function(x){return x.k===meK});return m}
+function meFindBy(t){return P.filter(function(x){return nt(x.info&&x.info.tg)===nt(t)})}
 function orgName(){return O[0]?O[0].n:'Организация'}
 function specs(){var r=[],seen={};
  function add(o){o.st.forEach(function(s){if(s.p&&s.p!=='Владелец'){var k=o.n+'|'+s.p;if(!seen[k]){seen[k]=1;r.push({org:o.n,p:s.p})}}})}
@@ -1084,9 +1080,11 @@ function specs(){var r=[],seen={};
 function meLogin(){R('<div class="card"><h2>Моё здоровье</h2><p>Введите ваш Telegram-аккаунт</p><label for="mt">Telegram</label><input id="mt" placeholder="@username" autocapitalize="off" autocomplete="off" value="'+qa(ME||'')+'"><div class="err" id="mr"></div><button class="bt" data-a="mego">Войти</button></div>','melogin')}
 function meGo(){var t=$('mt').value.trim().replace(/^@/,'');
  if(!TG.test(t))return err('Telegram: 5–32 символа, латиница, цифры и _','mr');
- ME=t;if(!meFind().length){ME=null;return err('Вас пока нет ни в одной организации. Попросите врача указать ваш Telegram в карточке пациента.','mr')}
- sv('mis_me',ME);meInfo()}
-function meOut(){ME=null;meSpec=null;try{localStorage.removeItem('mis_me')}catch(x){}home()}
+ var f=meFindBy(t);if(!f.length){ME=null;return err('Вас пока нет ни в одной организации. Попросите врача указать ваш Telegram в карточке пациента.','mr')}
+ if(f.length>1){ME=t;mePick(f);return}
+ ME=t;meK=f[0].k;sv('mis_me',ME);meInfo()}
+function mePick(f){var h='<div class="card"><h2>Моё здоровье</h2><p>Найдено несколько пациентов с этим Telegram. Выберите свою карточку:</p>'+f.map(function(x){return'<div class="ri" style="display:flex;gap:8px;align-items:center"><div style="flex:1"><b>'+e(x.n)+'</b><span class="sb">КВС '+e(x.k)+' · '+e(x.st||'—')+' · '+e(x.b||'—')+'</span></div><button class="bt2" type="button" data-a="mepick" data-k="'+qa(x.k)+'">Открыть</button></div>'}).join('')+'<div class="err" id="mr"></div><button class="bt" data-a="mego">Ввести другой аккаунт</button></div>';R(h,'mepick')}
+function meOut(){ME=null;meK=null;meSpec=null;try{localStorage.removeItem('mis_me')}catch(x){}home()}
 function meInfo(){var x=meFind()[0];if(!x)return meLogin();var I=x.info||{};
  var g=function(l,v){return'<div><small class="sb">'+l+'</small>'+(v?e(v):'—')+'</div>'};
  R('<div class="card w"><h2>'+e(x.n)+'</h2><p>@'+e(ME)+' · '+e(orgName())+'</p><div class="fg2">'+g('Дата рождения',x.b+' ('+ageTxt(x.a)+')')+g('Пол',x.s==='Ж'?'Женский':'Мужской')+g('Статус',x.st)+g('Палата',x.g)+g('Поступил',x.d)+g('Номер КВС',x.k)+g('Телефон',I.tel)+g('Адрес',I.addr)+g('СНИЛС',I.snils)+g('Полис ОМС',I.polis)+g('Группа крови',I.blood!=='—'?I.blood:'')+g('Аллергии',I.allergy)+'</div></div>'
