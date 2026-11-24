@@ -214,7 +214,7 @@ $("r2").onclick=function(){openTab("Журнал назначений")};
 $("r3").onclick=function(){openTab("Отчёты")};
 
 var SUPA_URL='https://bcmnktypnnnkivqoabuv.supabase.co',SUPA_KEY='sb_publishable_T1id5uMj1NpTE-ZyHjgLSg_xEW_jjpT';
-var SYNCK=['mis_u','mis_o','mis_p2','mis_aud','mis_v','mis_ap','mis_sh','mis_w','mis_mkb','mis_me','mis_req','mis_nt','mis_ban','mis_inv'],pushT=null,pushPend={},pushFly={},tmap=ls('mis_ts',{});
+var SYNCK=['mis_u','mis_o','mis_p2','mis_aud','mis_v','mis_ap','mis_sh','mis_w','mis_mkb','mis_me','mis_req','mis_nt','mis_ban','mis_inv','mis_ref'],pushT=null,pushPend={},pushFly={},tmap=ls('mis_ts',{});
 function supaCfg(){return SUPA_URL&&SUPA_KEY}
 function ls(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(x){return d}}
 function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(x){}
@@ -233,6 +233,9 @@ function cloudPush(){if(!supaCfg())return;
 function invLink(code){return location.origin+'/?inv='+code}
 function mkInv(tg,org,pos){var c=String(Math.floor(100000+Math.random()*900000));INV[c]={t:tg,o:org,p:pos||'',dt:today()};sv('mis_inv',INV);return c}
 function invApply(code){var inv=INV[code];if(!inv)return err('Инвайт-ссылка недействительна или уже использована');var t=inv.t.toLowerCase();if(!TG.test(t))return err('В ссылке указан некорректный Telegram');if(!U[t]){U[t]=inv.m||'';sv('mis_u',U)}S=t;sv('mis_s',S);if(org){var st=org.st.filter(function(x){return x.t===t})[0];if(!st){org.st.push({t:t,p:inv.p||'Врач'});sv('mis_o',O)}}delete INV[code];sv('mis_inv',INV);location.href=location.origin+'/';cloudPull(orgs)}
+function refLink(tg){return{site:location.origin+'/?ref='+tg,bot:'https://t.me/'+curBotName+'?start=ref_'+tg}}
+function refApply(referee,referrer){if(!REF)REF={};referee=referee.toLowerCase();referrer=referrer.toLowerCase();if(!TG.test(referee)||!TG.test(referrer))return;if(referee===referrer)return;if(!REF[referrer])REF[referrer]=[];if(REF[referrer].indexOf(referee)<0)REF[referrer].push(referee);sv('mis_ref',REF)}
+function pendingRef(){var m=location.search.match(/[?&]ref=([^&]+)/);if(m)return m[1].toLowerCase();var m2=location.search.match(/[?&]start=([^&]+)/);if(m2&&m2[1].indexOf('ref_')===0)return m2[1].slice(4).toLowerCase();return null}
 function cloudPull(cb){if(!supaCfg()){if(cb)cb();return}
  fetch(SUPA_URL+'/rest/v1/state?select=id,data',{headers:{apikey:SUPA_KEY}}).then(function(r){return r.json()}).then(function(rows){
   var ch=false;
@@ -251,7 +254,7 @@ function cloudPull(cb){if(!supaCfg()){if(cb)cb();return}
     if(ct>lt){tmap[row.id]=ct;persistTs()}});
   }
   reloadState();if(cb)cb(ch)}).catch(function(){if(cb)cb()})}
-function reloadState(){U=ls('mis_u',U);O=ls('mis_o',O);P=ls('mis_p2',P);AUD=ls('mis_aud',AUD);JV=ls('mis_v',JV);AP=ls('mis_ap',AP);SH=ls('mis_sh',SH);WD=ls('mis_w',WD);MKB=ls('mis_mkb',null)||MKB;ME=ls('mis_me',ME);REQ=ls('mis_req',REQ);NT=ls('mis_nt',NT);BAN=ls('mis_ban',BAN);INV=ls('mis_inv',{});
+function reloadState(){U=ls('mis_u',U);O=ls('mis_o',O);P=ls('mis_p2',P);AUD=ls('mis_aud',AUD);JV=ls('mis_v',JV);AP=ls('mis_ap',AP);SH=ls('mis_sh',SH);WD=ls('mis_w',WD);MKB=ls('mis_mkb',null)||MKB;ME=ls('mis_me',ME);REQ=ls('mis_req',REQ);NT=ls('mis_nt',NT);BAN=ls('mis_ban',BAN);INV=ls('mis_inv',{});REF=ls('mis_ref',{});
  if(org){var fo=O.filter(function(o){return o.n===org.n&&o.ow===org.ow})[0];if(fo)org=fo}}
 var curAct='home';
 function autoRedraw(){
@@ -262,7 +265,7 @@ function autoRedraw(){
   if(!t||t==='main')draw();else{try{$("alt").innerHTML=view(t)}catch(x){}}}
  else{var f={home:home,orgs:orgs,mgmt:mgmtView,req:reqView,nt:ntView,login:login,reg:reg}[curAct];if(f){try{f()}catch(x){}}}
  window.scrollTo(0,y);if(sc)sc.scrollTop=st}
-var U=ls('mis_u',{}),O=ls('mis_o',[]),S=ls('mis_s',null),org=null,code=null,pend=null,scr=$('scr'),INV=ls('mis_inv',{});
+var U=ls('mis_u',{}),O=ls('mis_o',[]),S=ls('mis_s',null),org=null,code=null,pend=null,scr=$('scr'),INV=ls('mis_inv',{}),REF=ls('mis_ref',{});
 var TG=/^[A-Za-z0-9_]{5,32}$/;
 var DEF_BOT='9133038484:AAHBlPvSnqMX0LnNmSWdO11VB4T3LvtFKeU';
 var BOT=DEF_BOT,CHATS=ls('mis_chat',{}),pollT=null,reqSeq=0,curNonce=null,curBotName=null;
@@ -280,12 +283,13 @@ function botRequest(t){var box=$('rc');if(!box)return;var rid=++reqSeq;
   if(rid!==reqSeq)return;
   if(!g||!g.ok)return botErr('Не удалось связаться с Telegram. Нажмите «Получить код» ещё раз.');
   curBotName=g.result.username;
+  var pr=pendingRef();if(pr)try{localStorage.setItem('mis_pendingRef',pr)}catch(x){}
   curNonce=String(Math.floor(100000+Math.random()*900000));
   box.innerHTML='<div class="tg"><b>Telegram</b><br>Нажмите кнопку — бот пришлёт код в чат через пару секунд. Страницу не перезагружайте.<br><a class="bt" style="display:block;text-align:center;text-decoration:none" href="https://t.me/'+e(curBotName)+'?start='+curNonce+'" target="_blank" rel="noopener">Открыть бота и получить код</a><small style="display:block;margin-top:6px">Не сработало? Отправьте боту вручную: /start '+curNonce+'</small></div>';
   var chk=function(){if(rid!==reqSeq)return;tgApi('getUpdates',{timeout:0}).then(function(r){if(rid!==reqSeq)return;if(!r||!r.ok)return;(r.result||[]).forEach(function(u){var m=u.message||u.edited_message;if(m&&m.text&&new RegExp('(?:^|[^0-9])'+curNonce+'(?:[^0-9]|$)').test(m.text)){reqSeq++;clearInterval(pollT);pollT=null;
    var mu=((m.chat.username||m.from.username||'')+'').toLowerCase();
    if(mu!==t){box.innerHTML='<div class="tg"><b>Telegram</b><br>'+(mu?'Вы нажали кнопку из аккаунта <b>@'+e(mu)+'</b>, а в поле указали <b>@'+e(t)+'</b>. Введите свой настоящий @username и получите код заново.':'В вашем Telegram не указан @username — задайте его в настройках Telegram (Настройки → Имя пользователя) и попробуйте снова.')+'</div>';return}
-   CHATS[t.toLowerCase()]=m.chat.id;sv('mis_chat',CHATS);U[pend.t]=pend.m;sv('mis_u',U);S=pend.t;sv('mis_s',S);code=null;pend=null;cloudPull(orgs)}})}).catch(function(){})};
+   CHATS[t.toLowerCase()]=m.chat.id;sv('mis_chat',CHATS);U[pend.t]=pend.m;sv('mis_u',U);S=pend.t;sv('mis_s',S);code=null;var pr=ls('mis_pendingRef',null)||(pend&&pend.ref);pend=null;if(pr){refApply(S,pr);try{localStorage.removeItem('mis_pendingRef')}catch(x){}};cloudPull(orgs)}})}).catch(function(){})};
   chk();pollT=setInterval(chk,2500)}).catch(function(x){if(rid===reqSeq)botErr('Не удалось связаться с Telegram. Нажмите «Получить код» ещё раз.')})}
 function R(h,act){curAct=act||'';if(pollT){clearInterval(pollT);pollT=null}
  if(S&&S!==ADMIN&&(BAN[S.toLowerCase()]||!U[S])){var brs=BAN[S.toLowerCase()]&&BAN[S.toLowerCase()].rs;S=null;sv('mis_s',null);org=null;h='<div class="card"><h2>Доступ закрыт</h2><p>Аккаунт заблокирован или удалён администратором.</p>'+(brs?'<p class="sb">Причина: '+e(brs)+'</p>':'')+'<button class="bt" data-a="home">На главную</button></div>';act=''}
@@ -315,7 +319,7 @@ function getCode(){
  if(!/^[a-z0-9._+-]+@gmail\.com$/.test(m))return err('Нужна почта Gmail (name@gmail.com)');
  if(U[t]&&U[t]!==m)return err('Для этого Telegram указана другая почта');
  if(BAN[t])return err('Этот Telegram заблокирован администратором');
- code=String(Math.floor(10000+Math.random()*90000));pend={t:t,m:m};err('');
+ code=String(Math.floor(10000+Math.random()*90000));pend={t:t,m:m,r:pendingRef()};err('');
  return botRequest(t)}
 function orgs(){
  var my=[];O.forEach(function(o,i){if(o.sys&&o.sys!=='РБ.МИС')return;var m=o.st.filter(function(x){return(x.t||'').toLowerCase()===S})[0];if(m)my.push([o,i,m])});
@@ -342,12 +346,13 @@ function saveOrg(){if(org.ow==='demo')sv('mis_demo',org);else sv('mis_o',O)}
 function setTl(){var m=org.st.filter(function(x){return x.t===S})[0];$('tl').textContent='РБ.МИС / '+org.n+' / '+org.ty+' / '+(m?m.p:'')}
 function setView(){
  var pos=org.ty.indexOf('Учеб')===0?['Учитель','Классный руководитель','Завуч','Администратор']:['Врач-терапевт','Врач-хирург','Медсестра','Администратор'];
- return'<h3>Настройки организации</h3><div class="tg" style="margin:0 0 14px"><b>Смена</b><p class="sb" style="margin:4px 0 8px">Сотрудники могут работать только при открытой смене. Сейчас смена: '+(org.shift?'<b style="color:#2e8b57">открыта</b>':'<b style="color:#c0392b">закрыта</b>')+'</p><button class="bt2'+(org.shift?' g2':'')+'" data-s="shift" type="button">'+(org.shift?'Закрыть смену':'Открыть смену')+'</button></div><div class="tw"><div class="fg" style="margin-bottom:14px"><label>Название<input data-og="n" value="'+qa(org.n)+'"></label><label>Тип<select data-og="ty">'+['Медицинское учреждение','Учебное учреждение'].map(function(o){return'<option'+(o===org.ty?' selected':'')+'>'+o+'</option>'}).join('')+'</select></label><label>Telegram-канал<input data-og="ch" value="'+qa(org.ch)+'"></label></div><table><thead><tr><th>Telegram</th><th>Должность</th><th></th></tr></thead><tbody>'+org.st.map(function(s,i){return'<tr><td>@'+e(s.t)+'</td><td><input class="oi" data-og="p" data-i="'+i+'" list="pl" value="'+qa(s.p)+'" aria-label="Должность"></td><td>'+(s.t===org.ow?'':'<button class="bt g dl" data-s="del" data-i="'+i+'">Удалить</button>')+'</td></tr>'}).join('')+'</tbody></table><div class="sf"><input id="at" placeholder="@telegram сотрудника" autocapitalize="off"><input id="ap" list="pl" placeholder="Должность"><datalist id="pl">'+pos.map(function(p){return'<option value="'+p+'">'}).join('')+'</datalist><button class="bt dl" style="padding:8px 14px" data-s="add">Добавить</button><button class="bt2" type="button" data-s="inv">Пригласить сотрудника</button></div><div class="err" id="se"></div><h4 style="margin:22px 0 6px;font-weight:500">Справочник МКБ-10</h4><p class="sb">Сейчас кодов: '+MKB.length+'. Можно загрузить полный справочник: CSV (код;название) или JSON.</p><div class="sf"><input id="mf" type="file" accept=".csv,.txt,.json" style="border:0;padding:0"><button class="bt2" type="button" data-s="mkb">Загрузить</button><button class="bt2 g2" type="button" data-s="mkbr">Сбросить</button></div><div class="err" id="me"></div></div>'}
+ return'<h3>Настройки организации</h3><div class="tg" style="margin:0 0 14px"><b>Смена</b><p class="sb" style="margin:4px 0 8px">Сотрудники могут работать только при открытой смене. Сейчас смена: '+(org.shift?'<b style="color:#2e8b57">открыта</b>':'<b style="color:#c0392b">закрыта</b>')+'</p><button class="bt2'+(org.shift?' g2':'')+'" data-s="shift" type="button">'+(org.shift?'Закрыть смену':'Открыть смену')+'</button></div><div class="tw"><div class="fg" style="margin-bottom:14px"><label>Название<input data-og="n" value="'+qa(org.n)+'"></label><label>Тип<select data-og="ty">'+['Медицинское учреждение','Учебное учреждение'].map(function(o){return'<option'+(o===org.ty?' selected':'')+'>'+o+'</option>'}).join('')+'</select></label><label>Telegram-канал<input data-og="ch" value="'+qa(org.ch)+'"></label></div><table><thead><tr><th>Telegram</th><th>Должность</th><th></th></tr></thead><tbody>'+org.st.map(function(s,i){return'<tr><td>@'+e(s.t)+'</td><td><input class="oi" data-og="p" data-i="'+i+'" list="pl" value="'+qa(s.p)+'" aria-label="Должность"></td><td>'+(s.t===org.ow?'':'<button class="bt g dl" data-s="del" data-i="'+i+'">Удалить</button>')+'</td></tr>'}).join('')+'</tbody></table><div class="sf"><input id="at" placeholder="@telegram сотрудника" autocapitalize="off"><input id="ap" list="pl" placeholder="Должность"><datalist id="pl">'+pos.map(function(p){return'<option value="'+p+'">'}).join('')+'</datalist><button class="bt dl" style="padding:8px 14px" data-s="add">Добавить</button><button class="bt2" type="button" data-s="inv">Пригласить сотрудника</button><button class="bt2" type="button" data-s="ref">Моя реферальная ссылка</button></div><div class="err" id="se"></div><h4 style="margin:22px 0 6px;font-weight:500">Справочник МКБ-10</h4><p class="sb">Сейчас кодов: '+MKB.length+'. Можно загрузить полный справочник: CSV (код;название) или JSON.</p><div class="sf"><input id="mf" type="file" accept=".csv,.txt,.json" style="border:0;padding:0"><button class="bt2" type="button" data-s="mkb">Загрузить</button><button class="bt2 g2" type="button" data-s="mkbr">Сбросить</button></div><div class="err" id="me"></div></div>'}
 $('alt').onclick=function(ev){
  var a=ev.target.dataset.s;if(!a)return;
  if(a==='mkb')return impMkb();if(a==='mkbr'){MKB=parseMkb(RAW);try{localStorage.removeItem('mis_mkb')}catch(x){}$('alt').innerHTML=setView();return}
  if(a==='shift'){org.shift=!org.shift;saveOrg();syncShift();$('alt').innerHTML=setView();return}
  if(a==='inv'){var tg=$('at').value.trim().replace(/^@/,'').toLowerCase();if(!TG.test(tg))return err('Укажите корректный Telegram','se');var c=mkInv(tg,org.n,$('ap').value.trim());var box=$('se');box.innerHTML='<div class="tg"><b>Инвайт-ссылка</b><br>Пришлите эту ссылку сотруднику: <a href="https://t.me/'+curBotName+'?start=inv_'+c+'" target="_blank" rel="noopener">https://t.me/'+curBotName+'?start=inv_'+c+'</a></div>';return}
+if(a==='ref'){var rl=refLink(S);var myRefs=REF[S]||[];var box=$('se');box.innerHTML='<div class="tg"><b>Моя реферальная ссылка</b><br>Пришлите другу: <a href="'+rl.bot+'" target="_blank" rel="noopener">'+rl.bot+'</a><br>Или на сайт: <a href="'+rl.site+'" target="_blank" rel="noopener">'+rl.site+'</a></div><div class="sb" style="margin-top:8px">Ваши рефералы ('+myRefs.length+'): '+(myRefs.length?myRefs.map(function(r){return'<b>@'+e(r)+'</b>'}).join(', '):'—')+'</div>';return}
  if(a==='del'){org.st.splice(+ev.target.dataset.i,1)}
  else{var t=$('at').value.trim().replace(/^@/,'').toLowerCase(),p=$('ap').value.trim();
   if(!TG.test(t))return err('Telegram: 5–32 символа, латиница, цифры и _','se');
@@ -1178,4 +1183,5 @@ function recoverPush(){if(!supaCfg())return;var d=ls('mis_dirty',{}),ks=Object.k
 recoverPush();
 cloudPull(function(){try{home();draw()}catch(x){}});
 (function(){var m=location.search.match(/[?&]inv=([^&]+)/);if(m){invApply(m[1]);return}var m2=location.search.match(/[?&]start=([^&]+)/);if(m2&&m2[1].indexOf('inv_')===0)invApply(m2[1].slice(4))})();
+(function(){var pr=pendingRef();if(pr)try{localStorage.setItem('mis_pendingRef',pr)}catch(x){}})();
 </script></body></html>
