@@ -266,12 +266,14 @@ function autoRedraw(){
  else{var f={home:home,orgs:orgs,mgmt:mgmtView,req:reqView,nt:ntView,login:login,reg:reg}[curAct];if(f){try{f()}catch(x){}}}
  window.scrollTo(0,y);if(sc)sc.scrollTop=st}
 var U=ls('mis_u',{}),O=ls('mis_o',[]),S=ls('mis_s',null),org=null,code=null,pend=null,scr=$('scr'),INV=ls('mis_inv',{}),REF=ls('mis_ref',{});
+
+строки 261-268
 var TG=/^[A-Za-z0-9_]{5,32}$/;
 var DEF_BOT='9133038484:AAHBlPvSnqMX0LnNmSWdO11VB4T3LvtFKeU';
 var BOT=DEF_BOT,CHATS=ls('mis_chat',{}),pollT=null,reqSeq=0,curNonce=null,curBotName=null;
 function tgApi(m,p,tok){var q='';if(p)q='?'+Object.keys(p).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(p[k])}).join('&');
  var u='https://api.telegram.org/bot'+(tok||BOT)+'/'+m+q;
- return new Promise(function(res,rej){var n=0,e=0;function attempt(promise,tag){promise.then(function(r){if(n)return;if(r.ok){n=1;res(r.json())}else{e++;if(e===2)rej(0)}},function(){e++;if(e===2)rej(0)})}attempt(fetch(u),'direct');attempt(fetch(SUPA_URL.replace(/\/+$/,'')+'/functions/v1/tg/'+m+q,{headers:{apikey:SUPA_KEY,authorization:'Bearer '+SUPA_KEY}}),'relay')})}
+ return new Promise(function(res,rej){var n=0,e=0;function attempt(promise,tag){promise.then(function(r){if(n)return;if(r.ok){n=1;res(r.json())}else{e++;if(e===2)rej(0)}},function(){e++;if(e===2)rej(0)})}attempt(fetch(u),'direct');attempt(fetch(u),'direct')})}
 function botErr(m){var rc=$('rc');if(!rc)return;
  rc.innerHTML='<div class="tg"><b>Telegram</b><br>'+e(m)+'</div>'}
 function botSend(t,chatId){tgApi('sendMessage',{chat_id:chatId,text:'РБ.МИС · код подтверждения: '+code}).then(function(r){
