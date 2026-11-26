@@ -266,8 +266,6 @@ function autoRedraw(){
  else{var f={home:home,orgs:orgs,mgmt:mgmtView,req:reqView,nt:ntView,login:login,reg:reg}[curAct];if(f){try{f()}catch(x){}}}
  window.scrollTo(0,y);if(sc)sc.scrollTop=st}
 var U=ls('mis_u',{}),O=ls('mis_o',[]),S=ls('mis_s',null),org=null,code=null,pend=null,scr=$('scr'),INV=ls('mis_inv',{}),REF=ls('mis_ref',{});
-
-строки 261-268
 var TG=/^[A-Za-z0-9_]{5,32}$/;
 var DEF_BOT='9133038484:AAHBlPvSnqMX0LnNmSWdO11VB4T3LvtFKeU';
 var BOT=DEF_BOT,CHATS=ls('mis_chat',{}),pollT=null,reqSeq=0,curNonce=null,curBotName=null;
